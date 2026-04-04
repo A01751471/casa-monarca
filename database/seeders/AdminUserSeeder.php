@@ -13,12 +13,12 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         \App\Models\User::create([
-            'name' => 'Administrador Casa Monarca',
-            'email' => 'correo@casamonarca.com', // <--- CAMBIA ESTO
-            'password' => Hash::make('casamonarca'), // <--- CAMBIA ESTO
-            'role_requested' => 'admin',
-            'status' => 'approved',
-            'area_id' => null, // El admin no necesita un área específica
+            'name' => 'Admin',
+            'email' => 'correo@casamonarca.com',
+            'password' => bcrypt('casamonarca'), 
+            'status' => 'alta',           
+            'area_id' => 6, 
+            'role_id' => 1,
         ]);
     }
 }

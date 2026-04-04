@@ -10,8 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -23,12 +22,9 @@ class User extends Authenticatable
      * @return array<string, string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role_requested', // Añadir
-        'status',         // Añadir
-        'area_id',        // Añadir
+        'name', 'email', 'password',
+        'area_id', 'role_id', 'status',
+        'approved_by', 'public_key',      
     ];
     protected function casts(): array
     {
@@ -40,5 +36,9 @@ class User extends Authenticatable
     public function area()
     {
         return $this->belongsTo(Area::class);
+    }
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id', 'id');
     }
 }

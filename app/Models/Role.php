@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Area extends Model
+class Role extends Model
 {
-    protected $fillable = ['id', 'nombre'];
+    protected $fillable = ['nombre', 'nivel_acceso'];
     
     public function users()
     {

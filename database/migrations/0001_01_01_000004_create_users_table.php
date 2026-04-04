@@ -11,18 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // CAMBIA 'table' por 'create' si es el primer archivo de usuarios
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            // Aquí añadimos tus campos personalizados de una vez
-            $table->string('role_requested')->default('migrante'); 
-            $table->string('status')->default('pending');
-            $table->foreignId('area_id')->nullable(); 
             
+            $table->foreignId('area_id')->nullable()->constrained('areas');
+            $table->foreignId('role_id')->constrained('roles');
+            
+            // Ciclo de vida (Alta, Revocación, Baja, Rastreo)
+            $table->enum('status', ['pendiente', 'alta', 'baja', 'revocacion'])->default('pendiente');
+            $table->unsignedBigInteger('approved_by')->nullable(); // ID del que dio el Alta
+            
+            // Espacio para la Identidad Digital
+            $table->text('public_key')->nullable(); 
             $table->rememberToken();
             $table->timestamps();
         });
@@ -32,8 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('sessions');
+
     }
 };

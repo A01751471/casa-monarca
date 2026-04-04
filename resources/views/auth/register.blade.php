@@ -39,21 +39,56 @@
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
         <div class="mt-4">
-            <x-input-label for="role_requested" :value="__('¿Qué perfil solicitas?')" />
-            <select name="role_requested" id="role_requested" class="block mt-1 w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm text-black">
-                <option value="migrante">Migrante</option>
-                <option value="colaborador_interno">Colaborador Interno</option>
-                <option value="colaborador_externo">Colaborador Externo</option>
+            <x-input-label for="role_id" :value="__('¿Relación con la organización?')" />
+            <select id="role_id" name="role_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+                <option value="" disabled selected>Selecciona un perfil</option>
+                @foreach($roles as $role)
+                    <option value="{{ $role->id }}">{{ $role->name }}</option>
+                @endforeach
             </select>
+            <x-input-error :messages="$errors->get('role_id')" class="mt-2" />
+        </div>
+        <div id="area_container" class="mt-4" style="display: none;">
+            <x-input-label for="area_id" :value="__('Área a la que perteneces')" />
+            <select id="area_id" name="area_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                <option value="" selected disabled>Selecciona un área...</option>
+                @foreach($areas as $area)
+                    <option value="{{ $area->id }}">{{ $area->nombre}}</option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('area_id')" class="mt-2" />
         </div>
         <div class="flex items-center justify-end mt-4">
             <a class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800" href="{{ route('login') }}">
                 {{ __('Already registered?') }}
             </a>
-
             <x-primary-button class="ms-4">
                 {{ __('Register') }}
             </x-primary-button>
         </div>
     </form>
 </x-guest-layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const roleSelect = document.getElementById('role_id');
+        const areaContainer = document.getElementById('area_container');
+        const areaSelect = document.getElementById('area_id');
+
+        roleSelect.addEventListener('change', function () {
+            // El ID 2 es Coordinador y el 3 es Operativo (según tu RoleSeeder)
+            const selectedRole = roleSelect.value;
+
+            if (selectedRole === '2' || selectedRole === '3') {
+                // Mostrar con una transición suave
+                areaContainer.style.display = 'block';
+                areaSelect.setAttribute('required', 'required');
+            } else {
+                // Ocultar y limpiar el valor si eligen otro perfil
+                areaContainer.style.display = 'none';
+                areaSelect.removeAttribute('required');
+                areaSelect.value = ''; 
+            }
+        });
+    });
+</script>

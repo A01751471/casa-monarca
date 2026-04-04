@@ -12,14 +12,8 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
                     <x-nav-link :href="route('areas.index')" :active="request()->routeIs('areas.index')">
                         {{ __('Gestión de Áreas') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
-                        {{ __('Aprobar Usuarios') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -101,9 +95,6 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('areas.index')" :active="request()->routeIs('areas.index')">
                         {{ __('Gestión de Áreas') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
-                        {{ __('Aprobar Usuarios') }}
                     </x-responsive-nav-link>
                 </form>
             </div>
