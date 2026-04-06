@@ -9,9 +9,18 @@
                         <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
                     </a>
                 </div>
-
+                <!-- Navigation Links -->
+                
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    @if(auth()->user()->role_id == 1)
+                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.index')">
+                            {{ __('Gestión de Usuarios') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('admin.users.approvals')" :active="request()->routeIs('admin.users.approvals')">
+                            {{ __('Bandeja de Accesos') }}
+                        </x-nav-link>
+                    @endif
                     <x-nav-link :href="route('areas.index')" :active="request()->routeIs('areas.index')">
                         {{ __('Gestión de Áreas') }}
                     </x-nav-link>
