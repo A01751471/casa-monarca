@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\MigranteRegistrationController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -12,6 +13,11 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
+    // Selección de tipo de registro
+    Route::get('tipo-registro', fn() => view('auth.tipo-registro'))
+        ->name('tipo-registro');
+
+    // Registro de colaboradores / agentes externos
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
@@ -34,6 +40,16 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
 });
+
+// Registro de migrantes: accesible para visitantes y para staff autenticado
+Route::get('registro/migrante', [MigranteRegistrationController::class, 'create'])
+    ->name('register.migrante');
+
+Route::post('registro/migrante', [MigranteRegistrationController::class, 'store'])
+    ->name('register.migrante.store');
+
+Route::get('registro/migrante/exitoso', [MigranteRegistrationController::class, 'exitoso'])
+    ->name('migrante.registro.exitoso');
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)

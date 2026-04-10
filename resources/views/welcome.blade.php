@@ -39,11 +39,11 @@
                             Log in
                         </a>
 
-                        @if (Route::has('register'))
+                        @if (Route::has('tipo-registro'))
                             <a
-                                href="{{ route('register') }}"
+                                href="{{ route('tipo-registro') }}"
                                 class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">
-                                Register
+                                Registro
                             </a>
                         @endif
                     @endauth
@@ -254,7 +254,7 @@
                 Iniciar Sesión
             </a>
 
-            <a href="{{ route('register') }}" 
+            <a href="{{ route('tipo-registro') }}"
                class="block w-full py-3 px-4 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold rounded-lg transition duration-200">
                 Crear una Cuenta
             </a>
