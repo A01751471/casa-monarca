@@ -2,40 +2,59 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Area;
+use App\Models\Certificado;
+use App\Models\Expediente;
 use App\Models\User;
 
 class DashboardController extends Controller
 {
-
     public function index()
     {
         $user = auth()->user();
 
         if ($user->role_id == 1) {
-            // 1. Traemos todas las áreas y contamos cuántos usuarios tiene cada una
-            $areas = Area::withCount('users')->get();
-            // 2. Contamos el total de colaboradores activos
-            $totalUsuarios = User::where('status', 'alta')->count();
-            // 3. Traemos las solicitudes de acceso pendientes
-            return view('dashboard', compact('areas', 'totalUsuarios'));
+            return $this->dashboardAdmin($user);
         }
-        elseif ($user->role_id == 2) {
-            // 1. Traemos el área del coordinador con el conteo de usuarios
-            $areas = Area::where('id', $user->area_id)->withCount('users')->get();
-            // 2. Contamos los colaboradores activos en su área
-            $totalUsuarios = User::where('area_id', $user->area_id)->where('status', 'alta')->count();
-            // 3. Traemos las solicitudes de acceso pendientes de su área
-            $pendientes = User::where('area_id', $user->area_id)->where('status', 'pendiente')->get();
+
+        if ($user->role_id == 2) {
+            return $this->dashboardCoordinador($user);
         }
-        else {
-            // Para Operativos, no mostramos nada (o podríamos mostrar un mensaje)
-            $areas = collect(); // Colección vacía
-            $totalUsuarios = 0;
-            $pendientes = collect(); // Colección vacía
-        }
-        // 3. Enviamos los datos a la vista
+
+        return $this->dashboardOperativo($user);
+    }
+
+    private function dashboardAdmin($user)
+    {
+        $totalActivos    = User::where('status', 'alta')->whereIn('role_id', [2, 3, 4])->count();
+        $totalPendientes = User::where('status', 'pendiente')->count();
+        $totalCerrados   = Expediente::where('status', 'terminado')->count();
+        $totalCerts      = Certificado::where('status', 'activo')->count();
+
+        $areas = Area::withCount([
+            'users as colaboradores_activos' => fn($q) => $q->where('status', 'alta'),
+        ])->get();
+
+        return view('admin.dashboard', compact(
+            'totalActivos', 'totalPendientes', 'totalCerrados', 'totalCerts', 'areas'
+        ));
+    }
+
+    private function dashboardCoordinador($user)
+    {
+        $areas           = Area::where('id', $user->area_id)->withCount('users')->get();
+        $totalUsuarios   = User::where('area_id', $user->area_id)->where('status', 'alta')->count();
+        $pendientes      = User::where('area_id', $user->area_id)->where('status', 'pendiente')->get();
+
+        return view('dashboard', compact('areas', 'totalUsuarios', 'pendientes'));
+    }
+
+    private function dashboardOperativo($user)
+    {
+        $areas         = collect();
+        $totalUsuarios = 0;
+        $pendientes    = collect();
+
         return view('dashboard', compact('areas', 'totalUsuarios', 'pendientes'));
     }
 }

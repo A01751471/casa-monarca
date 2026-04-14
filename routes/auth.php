@@ -39,6 +39,10 @@ Route::middleware('guest')->group(function () {
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
+
+    // Página de espera tras registrarse (status = pendiente)
+    Route::get('espera-aprobacion', fn() => view('auth.espera-aprobacion'))
+        ->name('auth.espera-aprobacion');
 });
 
 // Registro de migrantes: accesible para visitantes y para staff autenticado

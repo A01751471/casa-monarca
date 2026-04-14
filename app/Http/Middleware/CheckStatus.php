@@ -18,8 +18,8 @@ class CheckStatus
         if(auth()->check() && auth()->user()->status !== 'alta') {
             auth()->logout();
 
-            return redirect()->route('login')->withError([
-                'email' => 'Tu cuenta aún está pendiente de aprobación.',
+            return redirect()->route('login')->withErrors([
+                'email' => 'Tu cuenta aún está pendiente de aprobación o ha sido suspendida.',
             ]);
         }
         return $next($request);

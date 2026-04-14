@@ -24,7 +24,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name', 'email', 'password',
         'area_id', 'role_id', 'status',
-        'approved_by', 'public_key',      
+        'approved_by',
     ];
     protected function casts(): array
     {
@@ -40,5 +40,15 @@ class User extends Authenticatable
     public function role()
     {
         return $this->belongsTo(Role::class, 'role_id', 'id');
+    }
+
+    public function certificados()
+    {
+        return $this->hasMany(Certificado::class)->orderByDesc('emitido_at');
+    }
+
+    public function certificadoActivo()
+    {
+        return $this->hasOne(Certificado::class)->where('status', 'activo')->latestOfMany('emitido_at');
     }
 }

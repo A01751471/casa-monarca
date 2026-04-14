@@ -54,6 +54,6 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        return redirect()->route('espera.aprobacion');
+        return redirect()->route('auth.espera-aprobacion');
     }
 }
