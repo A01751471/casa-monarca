@@ -48,11 +48,11 @@ class MigranteRegistrationController extends Controller
 
         $userMigrante = User::create([
             'name'     => $nombreCompleto,
-            'email'    => 'migrante_' . Str::uuid() . '@casamonarca.local', // email interno único
-            'password' => Hash::make($password),
-            'role_id'  => 5, // Migrante
+            'email'    => 'migrante_' . Str::uuid() . '@casamonarca.local',
+            'password' => Hash::make(Str::random(64)),
+            'role_id'  => 5,
             'area_id'  => null,
-            'status'   => 'alta',
+            'status'   => 'pendiente',
         ]);
 
         $perfil = MigrantePerfil::create([
@@ -84,14 +84,7 @@ class MigranteRegistrationController extends Controller
             'user_id' => $userMigrante->id,
         ]);
 
-        // Guardar credenciales en sesión para mostrarlas al staff
-        session([
-            'migrante_credenciales' => [
-                'nombre'   => $nombreCompleto,
-                'email'    => $userMigrante->email,
-                'password' => $password,
-            ],
-        ]);
+        session(['migrante_registrado_nombre' => $nombreCompleto]);
 
         return redirect()->route('migrante.registro.exitoso');
     }

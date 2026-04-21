@@ -51,4 +51,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Certificado::class)->where('status', 'activo')->latestOfMany('emitido_at');
     }
+
+    public function migrantePerfil()
+    {
+        return $this->hasOne(MigrantePerfil::class);
+    }
 }

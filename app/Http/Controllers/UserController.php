@@ -55,8 +55,11 @@ class UserController extends Controller
             'fingerprint'    => $fingerprint,
         ]);
 
-        // Guardar llave privada en sesión para mostrarla UNA sola vez
-        session(['private_key_once' => $privateKeyPem, 'approved_user_name' => $user->name]);
+        session([
+            'private_key_once'    => $privateKeyPem,
+            'approved_user_name'  => $user->name,
+            'approved_user_role'  => $user->role_id,
+        ]);
 
         return redirect()->route('admin.aprobacion.exitosa');
     }
@@ -69,10 +72,11 @@ class UserController extends Controller
                 ->with('status', 'La llave privada solo puede verse una vez y ya fue entregada.');
         }
 
-        $privateKey = session()->pull('private_key_once');
-        $userName   = session()->pull('approved_user_name');
+        $privateKey       = session()->pull('private_key_once');
+        $userName         = session()->pull('approved_user_name');
+        $approvedUserRole = session()->pull('approved_user_role');
 
-        return view('admin.aprobacion-exitosa', compact('privateKey', 'userName'));
+        return view('admin.aprobacion-exitosa', compact('privateKey', 'userName', 'approvedUserRole'));
     }
 
     public function reject(User $user): RedirectResponse

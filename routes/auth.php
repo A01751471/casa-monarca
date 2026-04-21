@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\MigranteAuthController;
 use App\Http\Controllers\Auth\MigranteRegistrationController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
@@ -13,7 +14,10 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    // Selección de tipo de registro
+    // Selección de tipo de acceso (login) y tipo de registro
+    Route::get('tipo-acceso', fn() => view('auth.tipo-acceso'))
+        ->name('tipo-acceso');
+
     Route::get('tipo-registro', fn() => view('auth.tipo-registro'))
         ->name('tipo-registro');
 
@@ -44,6 +48,12 @@ Route::middleware('guest')->group(function () {
     Route::get('espera-aprobacion', fn() => view('auth.espera-aprobacion'))
         ->name('auth.espera-aprobacion');
 });
+
+// Acceso por llave privada para migrantes
+Route::get('acceso', [MigranteAuthController::class, 'showLogin'])->name('migrante.login');
+Route::post('acceso', [MigranteAuthController::class, 'login'])->name('migrante.login.post')
+    ->middleware('throttle:5,1');
+Route::post('acceso/salir', [MigranteAuthController::class, 'logout'])->name('migrante.logout');
 
 // Registro de migrantes: accesible para visitantes y para staff autenticado
 Route::get('registro/migrante', [MigranteRegistrationController::class, 'create'])

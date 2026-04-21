@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Solicitud extends Model
 {
+    protected $table = 'solicitudes';
+
     protected $fillable = [
         'migrante_perfil_id',
         'user_id',

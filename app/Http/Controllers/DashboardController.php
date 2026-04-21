@@ -13,6 +13,10 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
+        if ($user->role_id == 5) {
+            return redirect()->route('migrante.dashboard');
+        }
+
         if ($user->role_id == 1) {
             return $this->dashboardAdmin($user);
         }

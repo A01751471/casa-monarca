@@ -3,6 +3,7 @@
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\CertificadoController;
 use App\Http\Controllers\DiagnosticoController;
+use App\Http\Controllers\MigranteSolicitudController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
@@ -52,10 +53,18 @@ Route::middleware(['auth', 'checkstatus'])->group(function () {
 
     // Certificados digitales
     Route::get('/admin/certificados',                              [CertificadoController::class, 'index'])->name('admin.certificados.index');
-    Route::post('/admin/certificados/{certificado}/revocar',       [CertificadoController::class, 'revoke'])->name('admin.certificados.revoke');
+    Route::delete('/admin/certificados/{certificado}',             [CertificadoController::class, 'destroy'])->name('admin.certificados.destroy');
 
     // Diagnóstico del sistema (solo admin)
     Route::get('/admin/diagnostico', [DiagnosticoController::class, 'index'])->name('admin.diagnostico');
+});
+
+// Portal de migrantes (requiere autenticación + status alta)
+Route::middleware(['auth', 'checkstatus'])->prefix('mi-espacio')->name('migrante.')->group(function () {
+    Route::get('/',                    [MigranteSolicitudController::class, 'dashboard'])->name('dashboard');
+    Route::get('/solicitudes',         [MigranteSolicitudController::class, 'index'])->name('solicitudes.index');
+    Route::get('/solicitudes/nueva',   [MigranteSolicitudController::class, 'create'])->name('solicitudes.create');
+    Route::post('/solicitudes',        [MigranteSolicitudController::class, 'store'])->name('solicitudes.store');
 });
 
 require __DIR__.'/auth.php';

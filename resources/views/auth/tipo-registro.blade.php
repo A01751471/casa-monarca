@@ -20,7 +20,7 @@
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                 <span style="display:none" class="font-bold text-green-800 text-lg">Casa Monarca</span>
             </a>
-            <a href="{{ route('login') }}"
+            <a href="{{ route('tipo-acceso') }}"
                class="text-sm text-green-700 hover:text-green-900 font-medium">
                 ¿Ya tienes cuenta? Iniciar sesión →
             </a>

@@ -6,11 +6,15 @@
             </svg>
         </div>
         <h2 class="text-xl font-bold text-gray-800 mb-2">¡Registro recibido!</h2>
-        <p class="text-sm text-gray-500 leading-relaxed mb-6">
-            Su entrevista de ingreso ha sido registrada correctamente. El personal de Casa Monarca revisará
-            su información y le brindará atención a la brevedad.
+        <p class="text-sm text-gray-500 leading-relaxed mb-2">
+            La información de <strong>{{ session('migrante_registrado_nombre', 'el migrante') }}</strong>
+            ha sido registrada correctamente.
         </p>
-        <a href="{{ route('login') }}"
+        <p class="text-sm text-gray-500 leading-relaxed mb-6">
+            El personal de Casa Monarca revisará el perfil y, una vez aprobado, generará las credenciales
+            de acceso seguro. Se le entregará un archivo de llave para ingresar al portal de solicitudes.
+        </p>
+        <a href="{{ route('tipo-registro') }}"
            class="inline-block px-6 py-2 bg-green-700 text-white text-sm font-semibold rounded-lg hover:bg-green-800 transition">
             Volver al inicio
         </a>

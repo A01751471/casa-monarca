@@ -48,4 +48,16 @@
             </x-primary-button>
         </div>
     </form>
+
+    <div class="mt-5 pt-5 border-t border-gray-200 text-center">
+        <p class="text-xs text-gray-400 mb-2">¿Es migrante del albergue?</p>
+        <a href="{{ route('migrante.login') }}"
+           class="inline-flex items-center gap-1.5 text-sm text-orange-600 hover:text-orange-800 font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            Ingresar con llave de acceso
+        </a>
+    </div>
 </x-guest-layout>
