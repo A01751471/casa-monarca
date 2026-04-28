@@ -12,4 +12,9 @@ class Area extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function solicitudesMembresia()
+    {
+        return $this->hasMany(AreaSolicitud::class)->where('status', 'pendiente');
+    }
 }

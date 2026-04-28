@@ -77,6 +77,11 @@
             @endphp
             <div class="px-6 py-3 flex items-center gap-4">
                 <div class="flex-1 min-w-0">
+                    @if($sol->expediente?->folio)
+                        <span class="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded mr-1">
+                            {{ $sol->expediente->folio }}
+                        </span>
+                    @endif
                     <p class="text-sm font-medium text-gray-800 truncate">{{ $sol->descripcion }}</p>
                     <p class="text-xs text-gray-400 mt-0.5">
                         {{ $sol->area?->nombre ?? '—' }} · {{ ucfirst($sol->tipo) }} ·

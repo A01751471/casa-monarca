@@ -50,10 +50,21 @@
                     'informacion' => 'Información',
                     default       => 'Otro',
                 };
+                $folio = $sol->expediente?->folio;
             @endphp
             <div class="px-6 py-4">
-                <div class="flex items-start justify-between gap-4">
+                <div class="flex items-start gap-4">
                     <div class="flex-1 min-w-0">
+                        {{-- Folio si ya tiene caso abierto --}}
+                        @if($folio)
+                            <div class="flex items-center gap-2 mb-1.5">
+                                <span class="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
+                                    {{ $folio }}
+                                </span>
+                                <span class="text-xs text-gray-400">Caso abierto</span>
+                            </div>
+                        @endif
+
                         <p class="text-sm font-medium text-gray-800 leading-snug">{{ $sol->descripcion }}</p>
                         <div class="flex flex-wrap gap-2 mt-1.5">
                             <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
@@ -66,8 +77,24 @@
                                 {{ $sol->created_at->format('d/m/Y') }}
                             </span>
                         </div>
+
+                        {{-- Botón marcar como resuelta (solo cuando está en proceso) --}}
+                        @if($sol->status === 'en_proceso')
+                            <form action="{{ route('migrante.solicitudes.resolver', $sol->id) }}" method="POST" class="mt-3">
+                                @csrf
+                                <button type="submit"
+                                        onclick="return confirm('¿Confirma que su solicitud fue resuelta satisfactoriamente?')"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-700 hover:bg-green-800 text-white text-xs font-semibold rounded-full transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Marcar como resuelta
+                                </button>
+                            </form>
+                        @endif
                     </div>
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $badge[0] }} shrink-0">
+
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $badge[0] }} shrink-0 mt-1">
                         {{ $badge[1] }}
                     </span>
                 </div>

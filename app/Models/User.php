@@ -56,4 +56,24 @@ class User extends Authenticatable
     {
         return $this->hasOne(MigrantePerfil::class);
     }
+
+    public function expedientesAsignados()
+    {
+        return $this->hasMany(Expediente::class, 'colaborador_id');
+    }
+
+    public function postulaciones()
+    {
+        return $this->hasMany(Postulacion::class);
+    }
+
+    public function areaSolicitudes()
+    {
+        return $this->hasMany(AreaSolicitud::class);
+    }
+
+    public function areaSolicitudPendiente()
+    {
+        return $this->hasOne(AreaSolicitud::class)->where('status', 'pendiente')->latestOfMany();
+    }
 }

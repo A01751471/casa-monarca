@@ -6,19 +6,13 @@ use App\Models\ActividadLog;
 use App\Models\Certificado;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class CertificadoController extends Controller
 {
-    private function soloAdmin(): void
-    {
-        if (auth()->user()->role_id != 1) {
-            abort(403, 'Acceso denegado.');
-        }
-    }
-
     public function index(Request $request): \Illuminate\View\View
     {
-        $this->soloAdmin();
+        Gate::authorize('puede-eliminar');
 
         // Marcar como vencidos los que ya pasaron su fecha antes de mostrar
         Certificado::where('status', 'activo')
@@ -45,7 +39,7 @@ class CertificadoController extends Controller
 
     public function destroy(Certificado $certificado): RedirectResponse
     {
-        $this->soloAdmin();
+        Gate::authorize('puede-eliminar');
 
         ActividadLog::registrar('eliminó_certificado', $certificado, [
             'fingerprint' => $certificado->fingerprint,

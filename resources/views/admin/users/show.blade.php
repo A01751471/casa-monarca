@@ -87,6 +87,7 @@
                         </form>
                     @endif
 
+                    @can('puede-eliminar')
                     <form action="{{ route('users.destroy', $usuario->id) }}" method="POST">
                         @csrf
                         @method('DELETE')
@@ -99,6 +100,7 @@
                             Eliminar usuario
                         </button>
                     </form>
+                    @endcan
                 </div>
             </div>
         </div>

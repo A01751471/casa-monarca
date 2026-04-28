@@ -194,6 +194,46 @@
 
     </div>
 
+    {{-- ── Matriz de permisos por nivel ───────────────────────────── --}}
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800 text-sm">Permisos por nivel</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Referencia de capacidades del sistema según rol</p>
+        </div>
+        <div class="divide-y divide-gray-100">
+            @php
+                $niveles = [
+                    ['nivel' => 'Nv.1', 'rol' => 'Administrador', 'permisos' => 'CRUD', 'detalle' => 'Acceso total · Gestiona todos los niveles · PKI admin', 'color' => 'red', 'certificado' => true],
+                    ['nivel' => 'Nv.2', 'rol' => 'Coordinador', 'permisos' => 'CRU', 'detalle' => '5 áreas: Humanitario · Psicosocial · Legal · Comunicación · Administración · PKI', 'color' => 'indigo', 'certificado' => true],
+                    ['nivel' => 'Nv.3', 'rol' => 'Operativo', 'permisos' => 'CR', 'detalle' => 'Revisa datos · Los canaliza al coordinador · Sin firma digital', 'color' => 'teal', 'certificado' => false],
+                    ['nivel' => 'Nv.4', 'rol' => 'Usuario', 'permisos' => 'C', 'detalle' => 'Becarios · Voluntarios · Servicio social · Recepción · Solo registro', 'color' => 'green', 'certificado' => false],
+                    ['nivel' => 'Nv.5', 'rol' => 'Migrante', 'permisos' => 'R propio', 'detalle' => 'Solo lectura de su propio expediente · Sin firma · Sin certificado', 'color' => 'gray', 'certificado' => false],
+                ];
+            @endphp
+            @foreach($niveles as $n)
+            <div class="px-6 py-3 flex items-center gap-4">
+                <span class="w-12 text-xs font-bold text-gray-500 shrink-0">{{ $n['nivel'] }}</span>
+                <span class="w-32 text-sm font-semibold text-gray-700 shrink-0">{{ $n['rol'] }}</span>
+                <span class="w-20 text-xs font-bold px-2 py-1 rounded text-center shrink-0
+                    bg-{{ $n['color'] }}-100 text-{{ $n['color'] }}-700">
+                    {{ $n['permisos'] }}
+                </span>
+                <span class="text-xs text-gray-400 flex-1 min-w-0 truncate">{{ $n['detalle'] }}</span>
+                @if($n['certificado'])
+                    <span class="shrink-0 text-xs text-green-600 flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        PKI
+                    </span>
+                @else
+                    <span class="shrink-0 text-xs text-gray-300 w-10"></span>
+                @endif
+            </div>
+            @endforeach
+        </div>
+    </div>
+
     {{-- ── Nota de mínimo privilegio ────────────────────────────── --}}
     <div class="flex items-start gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-5 py-4">
         <svg class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -202,8 +242,9 @@
                   clip-rule="evenodd"/>
         </svg>
         <p class="text-xs text-indigo-700 leading-relaxed">
-            <strong>Administrador:</strong> Tiene acceso completo a la gestión de usuarios y certificados de todas las áreas.
-            Todas las acciones quedan registradas en el log de actividad para auditoría.
+            <strong>Administrador:</strong> Acceso CRUD completo. Gestión de identidades, certificados y auditoría en todas las áreas.
+            Solo los coordinadores (Nv.2) reciben certificado PKI — operativos, usuarios y migrantes usan autenticación por password únicamente.
+            Todas las acciones quedan registradas en el log de actividad.
         </p>
     </div>
 

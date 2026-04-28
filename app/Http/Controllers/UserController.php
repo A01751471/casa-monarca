@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
@@ -18,50 +19,78 @@ class UserController extends Controller
      */
     public function approve(User $user): RedirectResponse
     {
+        Gate::authorize('puede-eliminar'); // solo admin aprueba usuarios
+
         $user->update([
             'status'      => 'alta',
             'approved_by' => auth()->id(),
         ]);
 
-        // Generar par RSA-2048
-        $config = [
-            'digest_alg'       => 'sha256',
-            'private_key_bits' => 2048,
-            'private_key_type' => OPENSSL_KEYTYPE_RSA,
-        ];
-        $resource   = openssl_pkey_new($config);
-        $details    = openssl_pkey_get_details($resource);
-        $publicKey  = $details['key'];
+        // Solo los coordinadores reciben par de claves PKI + archivo .pem
+        if ($user->role_id === 2) {
+            $config = [
+                'digest_alg'       => 'sha256',
+                'private_key_bits' => 2048,
+                'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            ];
+            $resource  = openssl_pkey_new($config);
+            $details   = openssl_pkey_get_details($resource);
+            $publicKey = $details['key'];
 
-        openssl_pkey_export($resource, $privateKeyPem);
+            openssl_pkey_export($resource, $privateKeyPem);
 
-        // Fingerprint = SHA-256 del PEM de la llave pública
-        $fingerprint = hash('sha256', $publicKey);
+            $fingerprint = hash('sha256', $publicKey);
 
-        $certificado = Certificado::create([
-            'user_id'     => $user->id,
-            'emitido_por' => auth()->id(),
-            'public_key'  => $publicKey,
-            'fingerprint' => $fingerprint,
-            'algoritmo'   => 'RSA-2048',
-            'emitido_at'  => now(),
-            'vence_at'    => now()->addYears(2),
-            'status'      => 'activo',
-        ]);
+            $certificado = Certificado::create([
+                'user_id'     => $user->id,
+                'emitido_por' => auth()->id(),
+                'public_key'  => $publicKey,
+                'fingerprint' => $fingerprint,
+                'algoritmo'   => 'RSA-2048',
+                'emitido_at'  => now(),
+                'vence_at'    => now()->addYears(2),
+                'status'      => 'activo',
+            ]);
 
-        ActividadLog::registrar('aprobó_usuario', $user, [
-            'usuario'        => $user->name,
-            'certificado_id' => $certificado->id,
-            'fingerprint'    => $fingerprint,
-        ]);
+            ActividadLog::registrar('aprobó_usuario', $user, [
+                'usuario'        => $user->name,
+                'certificado_id' => $certificado->id,
+                'fingerprint'    => $fingerprint,
+            ]);
 
-        session([
-            'private_key_once'    => $privateKeyPem,
-            'approved_user_name'  => $user->name,
-            'approved_user_role'  => $user->role_id,
-        ]);
+            session([
+                'private_key_once'   => $privateKeyPem,
+                'approved_user_name' => $user->name,
+                'approved_user_role' => $user->role_id,
+            ]);
 
-        return redirect()->route('admin.aprobacion.exitosa');
+            return redirect()->route('admin.aprobacion.exitosa');
+        }
+
+        // Migrante: generar password aleatoria de 10 chars, mostrar una sola vez
+        if ($user->role_id === 5) {
+            $passwordPlain = strtoupper(substr(str_shuffle('ABCDEFGHJKMNPQRSTUVWXYZ'), 0, 3))
+                           . rand(100, 999)
+                           . strtolower(substr(str_shuffle('abcdefghjkmnpqrstuvwxyz'), 0, 3));
+
+            $user->update(['password' => \Illuminate\Support\Facades\Hash::make($passwordPlain)]);
+
+            ActividadLog::registrar('aprobó_migrante', $user, ['usuario' => $user->name]);
+
+            session([
+                'private_key_once'   => $passwordPlain,
+                'approved_user_name' => $user->name,
+                'approved_user_role' => $user->role_id,
+            ]);
+
+            return redirect()->route('admin.aprobacion.exitosa');
+        }
+
+        // Operativo y Usuario: solo se activa, no hay credencial a mostrar
+        ActividadLog::registrar('aprobó_usuario', $user, ['usuario' => $user->name]);
+
+        return redirect()->route('admin.users.approvals')
+            ->with('status', "Acceso habilitado para {$user->name}.");
     }
 
     public function aprobacionExitosa(): \Illuminate\View\View
@@ -81,6 +110,8 @@ class UserController extends Controller
 
     public function reject(User $user): RedirectResponse
     {
+        Gate::authorize('puede-eliminar');
+
         $user->update(['status' => 'baja']);
 
         ActividadLog::registrar('rechazó_usuario', $user, ['usuario' => $user->name]);
@@ -90,6 +121,8 @@ class UserController extends Controller
 
     public function revoke(User $user): RedirectResponse
     {
+        Gate::authorize('puede-eliminar');
+
         $user->update(['status' => 'revocacion']);
 
         // Revocar certificados activos
@@ -104,6 +137,8 @@ class UserController extends Controller
 
     public function restore(User $user): RedirectResponse
     {
+        Gate::authorize('puede-eliminar');
+
         $user->update(['status' => 'alta']);
 
         ActividadLog::registrar('restauró_acceso', $user, ['usuario' => $user->name]);
@@ -113,6 +148,8 @@ class UserController extends Controller
 
     public function toggleRole(User $user): RedirectResponse
     {
+        Gate::authorize('puede-eliminar');
+
         $nuevoRol = ($user->role_id == 3) ? 2 : 3;
         $user->update(['role_id' => $nuevoRol]);
 
@@ -127,6 +164,8 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        Gate::authorize('puede-eliminar');
+
         // Revocar certificados antes de borrar
         Certificado::where('user_id', $user->id)
             ->where('status', 'activo')
@@ -147,9 +186,7 @@ class UserController extends Controller
 
     public function show(\App\Models\User $user): \Illuminate\View\View
     {
-        if (auth()->user()->role_id != 1) {
-            abort(403);
-        }
+        Gate::authorize('puede-eliminar');
 
         $usuario = $user->load(['area', 'role', 'certificados']);
 
@@ -158,9 +195,7 @@ class UserController extends Controller
 
     public function index(): \Illuminate\View\View
     {
-        if (auth()->user()->role_id != 1) {
-            abort(403, 'Acceso denegado.');
-        }
+        Gate::authorize('puede-eliminar');
 
         $users = User::with(['area', 'role'])->orderBy('created_at', 'desc')->get();
         $areas = Area::all();
@@ -171,9 +206,7 @@ class UserController extends Controller
 
     public function pendingApprovals(): \Illuminate\View\View
     {
-        if (auth()->user()->role_id != 1) {
-            abort(403, 'Acceso denegado.');
-        }
+        Gate::authorize('puede-eliminar');
 
         $pendientes = User::where('status', 'pendiente')->with(['area', 'role'])->get();
 
@@ -182,9 +215,7 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        if (auth()->user()->role_id != 1) {
-            abort(403, 'Acceso denegado.');
-        }
+        Gate::authorize('puede-actualizar');
 
         $request->validate([
             'role_id' => 'required|exists:roles,id',

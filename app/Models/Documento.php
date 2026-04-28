@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\DocumentoAccionLog;
 
 class Documento extends Model
 {
@@ -35,5 +36,10 @@ class Documento extends Model
     public function estaFirmado(): bool
     {
         return $this->firmas()->exists();
+    }
+
+    public function accionesLog(): HasMany
+    {
+        return $this->hasMany(DocumentoAccionLog::class);
     }
 }

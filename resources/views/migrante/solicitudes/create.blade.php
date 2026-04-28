@@ -47,7 +47,7 @@
                     @endforeach
                 </select>
                 <p class="text-xs text-gray-400 mt-1">
-                    Humanitaria (alojamiento/comida), Legal (documentos), PsicoSocial (apoyo emocional), etc.
+                    Humanitario (alojamiento/comida), Legal (documentos), Psicosocial (apoyo emocional), etc.
                 </p>
             </div>
 

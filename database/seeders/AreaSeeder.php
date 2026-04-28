@@ -14,11 +14,11 @@ class AreaSeeder extends Seeder
     public function run(): void
     {
         $areas = [
-            ['id' => 1, 'nombre' => 'Humanitaria'],
-            ['id' => 2, 'nombre' => 'PsicoSocial'],
+            ['id' => 1, 'nombre' => 'Humanitario'],
+            ['id' => 2, 'nombre' => 'Psicosocial'],
             ['id' => 3, 'nombre' => 'Legal'],
             ['id' => 4, 'nombre' => 'Comunicación'],
-            ['id' => 5, 'nombre' => 'Almacén'],
+            ['id' => 5, 'nombre' => 'Administración'],
             ['id' => 6, 'nombre' => 'Tecnologías de Información'],
         ];
 

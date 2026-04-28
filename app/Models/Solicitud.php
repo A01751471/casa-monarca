@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Solicitud extends Model
 {
@@ -43,5 +44,10 @@ class Solicitud extends Model
     public function atendioPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'atendida_por');
+    }
+
+    public function postulaciones(): HasMany
+    {
+        return $this->hasMany(Postulacion::class);
     }
 }

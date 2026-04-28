@@ -11,14 +11,13 @@ use App\Models\MigrantePerfil;
 use App\Models\Role;
 use App\Models\Solicitud;
 use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 
 class DiagnosticoController extends Controller
 {
     public function index(): \Illuminate\View\View
     {
-        if (auth()->user()->role_id != 1) {
-            abort(403);
-        }
+        Gate::authorize('puede-eliminar');
 
         return view('admin.diagnostico', [
             // Conteos generales

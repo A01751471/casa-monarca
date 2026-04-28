@@ -24,7 +24,8 @@ class RegisteredUserController extends Controller
     public function create(): View
     {
         $areas = Area::all();
-        $roles = Role::where('id', '!=', 1)->get();
+        // Excluir Administrador (1) y Migrante (5) del formulario de registro normal
+        $roles = Role::whereNotIn('id', [1, 5])->get();
         return view('auth.register', compact('areas', 'roles'));
     }
 
@@ -35,21 +36,29 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $esExterno = $request->input('tipo_participacion') === 'externo';
+
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role_id' => ['required', 'exists:roles,id'],
-            'area_id' => ['required_if:role_id,2,3', 'nullable', 'exists:areas,id'],
+            'name'               => ['required', 'string', 'max:255'],
+            'email'              => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'password'           => ['required', 'confirmed', Rules\Password::defaults()],
+            'tipo_participacion' => ['required', 'in:interno,externo'],
+            // role_id solo es obligatorio para personal interno
+            'role_id'  => $esExterno ? ['nullable'] : ['required', 'exists:roles,id', 'in:2,3'],
+            'area_id'  => $esExterno ? ['nullable'] : ['required_if:role_id,2,3', 'nullable', 'exists:areas,id'],
         ]);
 
+        // Agente externo siempre queda en role 4 (Usuario), sin área
+        $roleId  = $esExterno ? 4 : (int) $request->role_id;
+        $areaId  = $esExterno ? null : $request->area_id;
+
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $request->role_id,
-            'area_id' => $request->area_id,
-            'status' => 'pendiente',  
+            'role_id'  => $roleId,
+            'area_id'  => $areaId,
+            'status'   => 'pendiente',
         ]);
 
         event(new Registered($user));

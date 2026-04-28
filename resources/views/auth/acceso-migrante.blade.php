@@ -13,7 +13,7 @@
 
 <div class="w-full max-w-md">
 
-    {{-- Logo / encabezado --}}
+    {{-- Logo --}}
     <div class="text-center mb-6">
         <div class="inline-flex items-center justify-center w-14 h-14 bg-green-700 rounded-full text-white font-bold text-xl mb-3">
             CM
@@ -22,13 +22,12 @@
         <p class="text-sm text-gray-500 mt-1">Portal de atención a migrantes</p>
     </div>
 
-    {{-- Tarjeta --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-5">
 
         <div>
-            <h2 class="text-base font-semibold text-gray-800">Identificación segura</h2>
+            <h2 class="text-base font-semibold text-gray-800">Ingreso al portal</h2>
             <p class="text-xs text-gray-500 mt-1 leading-relaxed">
-                Seleccione su nombre y cargue el archivo de llave (.pem) que le entregó el personal de Casa Monarca.
+                Seleccione su nombre en la lista y escriba la contraseña que le proporcionó el personal de Casa Monarca.
             </p>
         </div>
 
@@ -48,7 +47,7 @@
                 No hay migrantes con acceso habilitado en este momento. Contacte al personal.
             </div>
         @else
-        <form method="POST" action="{{ route('migrante.login.post') }}" enctype="multipart/form-data" class="space-y-4">
+        <form method="POST" action="{{ route('migrante.login.post') }}" class="space-y-4">
             @csrf
 
             {{-- Selección de identidad --}}
@@ -63,7 +62,7 @@
                         @php
                             $p = $m->migrantePerfil;
                             $nombre = $p
-                                ? trim($p->nombre . ' ' . $p->primer_apellido . ' ' . $p->segundo_apellido)
+                                ? trim($p->nombre . ' ' . $p->primer_apellido . ($p->segundo_apellido ? ' ' . $p->segundo_apellido : ''))
                                 : $m->name;
                         @endphp
                         <option value="{{ $m->id }}" {{ old('user_id') == $m->id ? 'selected' : '' }}>
@@ -73,20 +72,17 @@
                 </select>
             </div>
 
-            {{-- Archivo de llave --}}
+            {{-- Contraseña --}}
             <div>
-                <label for="llave" class="block text-xs font-semibold text-gray-600 mb-1.5">
-                    Archivo de llave privada (.pem)
+                <label for="password" class="block text-xs font-semibold text-gray-600 mb-1.5">
+                    Contraseña
                 </label>
-                <div class="relative">
-                    <input type="file" name="llave" id="llave" accept=".pem,.key" required
-                           class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-700
-                                  file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0
-                                  file:text-xs file:font-semibold file:bg-green-50 file:text-green-700
-                                  hover:file:bg-green-100 focus:ring-2 focus:ring-green-500">
-                </div>
+                <input type="password" name="password" id="password" required
+                       autocomplete="current-password"
+                       placeholder="Contraseña entregada por el personal"
+                       class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:ring-2 focus:ring-green-500 focus:border-green-500">
                 <p class="text-xs text-gray-400 mt-1">
-                    Inserte su USB, seleccione el archivo <strong>llave_privada.pem</strong> que le proporcionaron.
+                    Si no recuerda su contraseña, solicite ayuda al personal del albergue.
                 </p>
             </div>
 
@@ -99,7 +95,6 @@
 
     </div>
 
-    {{-- Enlace a login staff --}}
     <p class="text-center text-xs text-gray-400 mt-4">
         ¿Es personal de Casa Monarca?
         <a href="{{ route('login') }}" class="text-green-700 hover:underline font-medium">Iniciar sesión aquí</a>
