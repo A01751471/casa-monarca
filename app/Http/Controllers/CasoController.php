@@ -330,6 +330,7 @@ class CasoController extends Controller
         Documento::create([
             'expediente_id' => $expediente->id,
             'subido_por'    => auth()->id(),
+            'categoria'     => 'expediente',
             'nombre'        => $request->nombre,
             'tipo'          => $file->getClientOriginalExtension(),
             'ruta_storage'  => $ruta,

@@ -30,7 +30,7 @@
                 Bienvenido<br>de regreso.
             </h1>
             <p style="color: var(--ink-500); font-size: 15px; line-height: 1.6;" class="mb-8">
-                Ingresa con tu correo institucional. Si aún no tienes acceso, solicítalo a tu coordinador.
+                Ingresa con tu correo institucional o con tu llave de coordinador.
             </p>
 
             @if (session('status'))
@@ -41,75 +41,181 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-5">
-                @csrf
-
-                <div>
-                    <label for="email"
-                           style="display:block; font-size:11px; font-family:var(--font-display);
-                                  font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
-                                  color:var(--ink-700); margin-bottom:8px;">
-                        Correo electrónico
-                    </label>
-                    <input id="email" type="email" name="email"
-                           value="{{ old('email') }}"
-                           placeholder="nombre@casamonarca.org.mx"
-                           autocomplete="username" autofocus required
-                           style="width:100%; padding:13px 16px; border-radius:var(--r-md);
-                                  border:1px solid var(--cream-300); background:var(--paper);
-                                  font-family:var(--font-body); font-size:14px; color:var(--ink-900);
-                                  box-sizing:border-box; outline:none; transition:border-color .15s;"
-                           onfocus="this.style.borderColor='var(--brand-orange)'"
-                           onblur="this.style.borderColor='var(--cream-300)'">
-                    @error('email')
-                        <p style="font-size:12px; color:var(--brand-red); margin-top:6px;">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="password"
-                           style="display:block; font-size:11px; font-family:var(--font-display);
-                                  font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
-                                  color:var(--ink-700); margin-bottom:8px;">
-                        Contraseña
-                    </label>
-                    <input id="password" type="password" name="password"
-                           placeholder="••••••••••"
-                           autocomplete="current-password" required
-                           style="width:100%; padding:13px 16px; border-radius:var(--r-md);
-                                  border:1px solid var(--cream-300); background:var(--paper);
-                                  font-family:var(--font-body); font-size:14px; color:var(--ink-900);
-                                  box-sizing:border-box; outline:none; transition:border-color .15s;"
-                           onfocus="this.style.borderColor='var(--brand-orange)'"
-                           onblur="this.style.borderColor='var(--cream-300)'">
-                    @error('password')
-                        <p style="font-size:12px; color:var(--brand-red); margin-top:6px;">{{ $message }}</p>
-                    @enderror
-                    <p style="font-size:11px; color:var(--ink-400); margin-top:6px;">
-                        Tu sesión expira tras 30 min de inactividad.
-                    </p>
-                </div>
-
-                <div class="flex items-center justify-between" style="font-size:13px;">
-                    <label style="display:flex; align-items:center; gap:8px; color:var(--ink-700); cursor:pointer;">
-                        <input type="checkbox" name="remember"
-                               style="accent-color:var(--brand-orange-deep);">
-                        Recuérdame en este equipo
-                    </label>
-                    @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}"
-                           style="color:var(--brand-orange-deep); font-weight:600; text-decoration:none;">
-                            ¿Olvidaste tu contraseña?
-                        </a>
-                    @endif
-                </div>
-
-                <button type="submit" class="cm-btn cm-btn-primary"
-                        style="width:100%; padding:15px; font-size:15px; border-radius:var(--r-md);">
-                    Iniciar sesión &nbsp;→
+            {{-- ── Tabs ── --}}
+            <div style="display:flex; gap:0; border-bottom: 2px solid var(--cream-200); margin-bottom:24px;">
+                <button id="tab-password"
+                        onclick="setTab('password')"
+                        style="flex:1; padding:10px 0; font-size:13px; font-family:var(--font-display);
+                               font-weight:700; letter-spacing:0.08em; background:none; border:none;
+                               cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px;
+                               transition:color .15s, border-color .15s;"
+                        class="tab-btn tab-active">
+                    Contraseña
                 </button>
-            </form>
+                <button id="tab-pem"
+                        onclick="setTab('pem')"
+                        style="flex:1; padding:10px 0; font-size:13px; font-family:var(--font-display);
+                               font-weight:700; letter-spacing:0.08em; background:none; border:none;
+                               cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px;
+                               transition:color .15s, border-color .15s;"
+                        class="tab-btn">
+                    Llave .pem
+                </button>
+            </div>
 
+            {{-- ── Formulario contraseña ── --}}
+            <div id="form-password">
+                <form method="POST" action="{{ route('login') }}" class="space-y-5">
+                    @csrf
+
+                    <div>
+                        <label for="email"
+                               style="display:block; font-size:11px; font-family:var(--font-display);
+                                      font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+                                      color:var(--ink-700); margin-bottom:8px;">
+                            Correo electrónico
+                        </label>
+                        <input id="email" type="email" name="email"
+                               value="{{ old('email') }}"
+                               placeholder="nombre@casamonarca.org.mx"
+                               autocomplete="username" autofocus required
+                               style="width:100%; padding:13px 16px; border-radius:var(--r-md);
+                                      border:1px solid var(--cream-300); background:var(--paper);
+                                      font-family:var(--font-body); font-size:14px; color:var(--ink-900);
+                                      box-sizing:border-box; outline:none; transition:border-color .15s;"
+                               onfocus="this.style.borderColor='var(--brand-orange)'"
+                               onblur="this.style.borderColor='var(--cream-300)'">
+                        @error('email')
+                            <p style="font-size:12px; color:var(--brand-red); margin-top:6px;">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="password"
+                               style="display:block; font-size:11px; font-family:var(--font-display);
+                                      font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+                                      color:var(--ink-700); margin-bottom:8px;">
+                            Contraseña
+                        </label>
+                        <input id="password" type="password" name="password"
+                               placeholder="••••••••••"
+                               autocomplete="current-password" required
+                               style="width:100%; padding:13px 16px; border-radius:var(--r-md);
+                                      border:1px solid var(--cream-300); background:var(--paper);
+                                      font-family:var(--font-body); font-size:14px; color:var(--ink-900);
+                                      box-sizing:border-box; outline:none; transition:border-color .15s;"
+                               onfocus="this.style.borderColor='var(--brand-orange)'"
+                               onblur="this.style.borderColor='var(--cream-300)'">
+                        @error('password')
+                            <p style="font-size:12px; color:var(--brand-red); margin-top:6px;">{{ $message }}</p>
+                        @enderror
+                        <p style="font-size:11px; color:var(--ink-400); margin-top:6px;">
+                            Tu sesión expira tras 30 min de inactividad.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center justify-between" style="font-size:13px;">
+                        <label style="display:flex; align-items:center; gap:8px; color:var(--ink-700); cursor:pointer;">
+                            <input type="checkbox" name="remember"
+                                   style="accent-color:var(--brand-orange-deep);">
+                            Recuérdame en este equipo
+                        </label>
+                        @if (Route::has('password.request'))
+                            <a href="{{ route('password.request') }}"
+                               style="color:var(--brand-orange-deep); font-weight:600; text-decoration:none;">
+                                ¿Olvidaste tu contraseña?
+                            </a>
+                        @endif
+                    </div>
+
+                    <button type="submit" class="cm-btn cm-btn-primary"
+                            style="width:100%; padding:15px; font-size:15px; border-radius:var(--r-md);">
+                        Iniciar sesión &nbsp;→
+                    </button>
+                </form>
+            </div>
+
+            {{-- ── Formulario llave PEM ── --}}
+            <div id="form-pem" style="display:none;">
+
+                @if ($errors->has('pem'))
+                    <div style="background:oklch(96% 0.04 25); border:1px solid oklch(85% 0.10 25);
+                                border-radius:var(--r-sm); padding:10px 14px; font-size:13px;
+                                color:var(--brand-red); margin-bottom:16px;">
+                        {{ $errors->first('pem') }}
+                    </div>
+                @endif
+
+                <div class="space-y-5">
+                    <div>
+                        <label for="pem-email"
+                               style="display:block; font-size:11px; font-family:var(--font-display);
+                                      font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+                                      color:var(--ink-700); margin-bottom:8px;">
+                            Correo electrónico
+                        </label>
+                        <input id="pem-email" type="email"
+                               placeholder="nombre@casamonarca.org.mx"
+                               autocomplete="username"
+                               style="width:100%; padding:13px 16px; border-radius:var(--r-md);
+                                      border:1px solid var(--cream-300); background:var(--paper);
+                                      font-family:var(--font-body); font-size:14px; color:var(--ink-900);
+                                      box-sizing:border-box; outline:none; transition:border-color .15s;"
+                               onfocus="this.style.borderColor='var(--brand-orange)'"
+                               onblur="this.style.borderColor='var(--cream-300)'">
+                    </div>
+
+                    <div>
+                        <label style="display:block; font-size:11px; font-family:var(--font-display);
+                                      font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+                                      color:var(--ink-700); margin-bottom:8px;">
+                            Archivo de llave privada (.pem)
+                        </label>
+
+                        <label for="pem-file"
+                               id="pem-drop-zone"
+                               style="display:flex; flex-direction:column; align-items:center;
+                                      justify-content:center; gap:8px; width:100%;
+                                      padding:24px 16px; border-radius:var(--r-md);
+                                      border:2px dashed var(--cream-300); background:var(--paper);
+                                      cursor:pointer; box-sizing:border-box; transition:border-color .15s;"
+                               ondragover="event.preventDefault(); this.style.borderColor='var(--brand-orange)'"
+                               ondragleave="this.style.borderColor='var(--cream-300)'"
+                               ondrop="handleDrop(event)">
+                            <svg style="width:28px;height:28px;color:var(--ink-400);"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                      d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                            </svg>
+                            <span id="pem-file-label" style="font-size:13px; color:var(--ink-500); text-align:center;">
+                                Arrastra tu archivo <strong>.pem</strong> aquí o haz clic
+                            </span>
+                            <input id="pem-file" type="file" accept=".pem" style="display:none;"
+                                   onchange="onPemFileSelected(this)">
+                        </label>
+                    </div>
+
+                    <div id="pem-status"
+                         style="display:none; font-size:12px; color:var(--ink-500);
+                                padding:10px 14px; border-radius:var(--r-sm);
+                                background:var(--cream-100); border:1px solid var(--cream-200);">
+                    </div>
+
+                    <button type="button" id="pem-submit" onclick="submitPem()"
+                            class="cm-btn cm-btn-primary"
+                            style="width:100%; padding:15px; font-size:15px; border-radius:var(--r-md);
+                                   opacity:0.45; cursor:not-allowed;"
+                            disabled>
+                        Verificar llave &nbsp;→
+                    </button>
+                </div>
+
+                <p style="font-size:11px; color:var(--ink-400); margin-top:14px; line-height:1.6;">
+                    Tu llave privada nunca abandona este dispositivo. Solo se usa para firmar un código de verificación temporal.
+                </p>
+            </div>
+
+            {{-- Acceso migrante --}}
             <div style="display:flex; align-items:center; gap:14px; margin:28px 0;
                         color:var(--ink-400); font-size:11px; font-family:var(--font-display);
                         font-weight:700; letter-spacing:0.15em;">
@@ -188,6 +294,119 @@
     </div>
 
 </div>
+
+{{-- ── PEM auth JavaScript ── --}}
+<style>
+.tab-btn { color: var(--ink-400); }
+.tab-active { color: var(--brand-orange-deep) !important; border-bottom-color: var(--brand-orange-deep) !important; }
+</style>
+<script>
+function setTab(tab) {
+    document.getElementById('form-password').style.display = tab === 'password' ? '' : 'none';
+    document.getElementById('form-pem').style.display      = tab === 'pem'      ? '' : 'none';
+    document.getElementById('tab-password').classList.toggle('tab-active', tab === 'password');
+    document.getElementById('tab-pem').classList.toggle('tab-active', tab === 'pem');
+}
+
+let pemPrivateKey = null;
+
+function handleDrop(e) {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) loadPemFile(file);
+}
+
+function onPemFileSelected(input) {
+    const file = input.files[0];
+    if (file) loadPemFile(file);
+}
+
+async function loadPemFile(file) {
+    setStatus('Leyendo archivo…', 'info');
+    const text = await file.text();
+    try {
+        pemPrivateKey = await importPrivateKey(text);
+        document.getElementById('pem-file-label').innerHTML =
+            '<strong style="color:var(--brand-orange-deep)">✓ ' + file.name + '</strong>';
+        document.getElementById('pem-drop-zone').style.borderColor = 'var(--brand-orange)';
+        const btn = document.getElementById('pem-submit');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        setStatus('Llave cargada correctamente. Ingresa tu correo y presiona "Verificar llave".', 'ok');
+    } catch (err) {
+        setStatus('No se pudo leer la llave: ' + err.message, 'error');
+    }
+}
+
+async function importPrivateKey(pem) {
+    const b64 = pem
+        .replace(/-----BEGIN (?:RSA )?PRIVATE KEY-----/, '')
+        .replace(/-----END (?:RSA )?PRIVATE KEY-----/, '')
+        .replace(/\s+/g, '');
+    const binary = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    return await crypto.subtle.importKey(
+        'pkcs8', binary.buffer,
+        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+        false, ['sign']
+    );
+}
+
+async function submitPem() {
+    const email  = document.getElementById('pem-email').value.trim();
+    const submit = document.getElementById('pem-submit');
+
+    if (!pemPrivateKey) { setStatus('Primero selecciona tu archivo .pem.', 'error'); return; }
+    if (!email)          { setStatus('Ingresa tu correo electrónico.', 'error'); return; }
+
+    submit.disabled = true;
+    submit.style.opacity = '0.45';
+    setStatus('Solicitando código de verificación…', 'info');
+
+    try {
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const res  = await fetch('{{ route('login.pem.challenge') }}?email=' + encodeURIComponent(email), {
+            headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            setStatus(data.error ?? 'No se encontró un certificado activo para este correo.', 'error');
+            submit.disabled = false; submit.style.opacity = '1';
+            return;
+        }
+
+        setStatus('Firmando código de verificación…', 'info');
+        const encoded   = new TextEncoder().encode(data.nonce);
+        const sigBuffer = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', pemPrivateKey, encoded);
+        const sigB64    = btoa(String.fromCharCode(...new Uint8Array(sigBuffer)));
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route('login.pem.verify') }}';
+        form.innerHTML = `<input name="_token" value="${csrf}"><input name="email" value="${email}"><input name="signature" value="${sigB64}">`;
+        document.body.appendChild(form);
+        form.submit();
+
+    } catch (err) {
+        setStatus('Error al firmar: ' + err.message, 'error');
+        submit.disabled = false; submit.style.opacity = '1';
+    }
+}
+
+function setStatus(msg, type) {
+    const el = document.getElementById('pem-status');
+    el.style.display = '';
+    el.textContent   = msg;
+    el.style.color   = type === 'error' ? 'var(--brand-red)' :
+                       type === 'ok'    ? 'var(--brand-orange-deep)' : 'var(--ink-500)';
+    el.style.background = type === 'error' ? 'oklch(96% 0.04 25)' : 'var(--cream-100)';
+    el.style.borderColor= type === 'error' ? 'oklch(85% 0.10 25)' : 'var(--cream-200)';
+}
+
+@if ($errors->has('pem'))
+document.addEventListener('DOMContentLoaded', () => setTab('pem'));
+@endif
+</script>
 
 </body>
 </html>

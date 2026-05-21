@@ -184,16 +184,6 @@
                             @endif
                         </div>
                     </div>
-                    @if($cert->status === 'activo')
-                    <form action="{{ route('admin.certificados.revoke', $cert->id) }}" method="POST">
-                        @csrf
-                        <button type="submit"
-                                onclick="return confirm('¿Revocar este certificado?')"
-                                class="px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 text-xs font-semibold rounded-full transition">
-                            Revocar
-                        </button>
-                    </form>
-                    @endif
                 </div>
             </div>
             @empty
@@ -202,6 +192,123 @@
             </div>
             @endforelse
         </div>
+
+        {{-- Documentos de identidad (solo migrantes) --}}
+        @if($usuario->role_id === 5)
+        <div style="background:var(--paper);border:1px solid var(--cream-200);
+                    border-radius:var(--r-lg);box-shadow:var(--shadow-sm);overflow:hidden;">
+
+            <div style="padding:16px 24px;border-bottom:1px solid var(--cream-100);
+                        display:flex;align-items:center;gap:10px;">
+                <svg style="width:16px;height:16px;color:var(--brand-orange-deep);flex-shrink:0;"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <h3 style="font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--ink-900);">
+                    Documentos de identidad
+                </h3>
+                <span style="margin-left:auto;font-size:12px;color:var(--ink-400);">
+                    {{ $documentosIdentidad->count() }} archivo(s)
+                </span>
+            </div>
+
+            @if($documentosIdentidad->isEmpty())
+                <div style="padding:32px 24px;text-align:center;font-size:14px;color:var(--ink-400);">
+                    El migrante aún no ha subido documentos de identidad.
+                </div>
+            @else
+                <div>
+                    @foreach($documentosIdentidad as $doc)
+                    @php
+                        $ext = strtolower($doc->tipo);
+                        $isImage = in_array($ext, ['jpg','jpeg','png']);
+                    @endphp
+                    <div style="display:flex;align-items:center;gap:14px;padding:14px 24px;
+                                border-bottom:1px solid var(--cream-100);">
+                        {{-- Icon --}}
+                        <div style="width:34px;height:34px;border-radius:var(--r-sm);
+                                    background:var(--cream-100);display:flex;align-items:center;
+                                    justify-content:center;flex-shrink:0;">
+                            <svg style="width:16px;height:16px;color:{{ $isImage ? 'var(--brand-orange-deep)' : 'var(--brand-red)' }};"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+
+                        {{-- Info --}}
+                        <div style="flex:1;min-width:0;">
+                            <p style="font-size:14px;font-weight:600;color:var(--ink-900);
+                                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                {{ $doc->nombre }}
+                            </p>
+                            <p style="font-size:12px;color:var(--ink-400);margin-top:3px;">
+                                <span style="font-family:var(--font-display);font-weight:700;
+                                             font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+                                             color:var(--brand-orange-deep);background:var(--brand-orange-soft);
+                                             border:1px solid var(--brand-orange-line);
+                                             padding:2px 8px;border-radius:999px;margin-right:8px;">
+                                    {{ $doc->etiqueta }}
+                                </span>
+                                .{{ strtoupper($doc->tipo) }} · Subido {{ $doc->created_at->format('d/m/Y') }}
+                            </p>
+                        </div>
+
+                        {{-- Actions --}}
+                        <div style="display:flex;gap:8px;flex-shrink:0;">
+                            <a href="{{ route('documentos.download', $doc->id) }}"
+                               class="cm-btn cm-btn-ghost"
+                               style="padding:6px 14px;font-size:12px;">
+                                <svg style="width:13px;height:13px;margin-right:5px;"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                Descargar
+                            </a>
+
+                            <form method="POST"
+                                  action="{{ route('migrante.documentos.destroy', $doc->id) }}"
+                                  onsubmit="return confirm('¿Eliminar este documento?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="cm-btn cm-btn-red"
+                                        style="padding:6px 14px;font-size:12px;">
+                                    Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            @endif
+
+            {{-- Perfil del migrante summary --}}
+            @if($usuario->migrantePerfil)
+            @php $p = $usuario->migrantePerfil; @endphp
+            <div style="padding:16px 24px;background:var(--cream-50);
+                        border-top:1px solid var(--cream-200);">
+                <p style="font-size:11px;font-family:var(--font-display);font-weight:700;
+                           letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-400);
+                           margin-bottom:10px;">
+                    Datos del perfil
+                </p>
+                <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--ink-700);">
+                    <span><strong>País:</strong> {{ $p->pais_origen }}</span>
+                    <span><strong>Nacimiento:</strong> {{ \Carbon\Carbon::parse($p->fecha_nacimiento)->format('d/m/Y') }}</span>
+                    <span><strong>Estado civil:</strong> {{ $p->estado_civil }}</span>
+                    <span><strong>Grupo:</strong> {{ $p->grupo_poblacion }}</span>
+                    <span><strong>Destino:</strong> {{ $p->destino_final ?? '—' }}</span>
+                    <span><strong>Status:</strong>
+                        <span style="font-weight:700;color:{{ $p->status === 'activo' ? 'var(--brand-orange-deep)' : 'var(--ink-400)' }}">
+                            {{ ucfirst($p->status) }}
+                        </span>
+                    </span>
+                </div>
+            </div>
+            @endif
+        </div>
+        @endif
 
     </div>
 </x-app-layout>

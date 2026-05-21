@@ -5,6 +5,7 @@ use App\Http\Controllers\AreaMembresiaController;
 use App\Http\Controllers\CasoController;
 use App\Http\Controllers\CertificadoController;
 use App\Http\Controllers\DiagnosticoController;
+use App\Http\Controllers\DocumentoIdentidadController;
 use App\Http\Controllers\MigranteSolicitudController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -106,6 +107,17 @@ Route::middleware(['auth', 'checkstatus'])->prefix('mi-espacio')->name('migrante
     Route::post('/solicitudes',                            [MigranteSolicitudController::class, 'store'])->name('solicitudes.store');
     Route::post('/solicitudes/{solicitud}/resolver',       [MigranteSolicitudController::class, 'resolver'])->name('solicitudes.resolver');
     Route::get('/caso/{expediente}/documentos',            [MigranteSolicitudController::class, 'verDocumentos'])->name('caso.documentos');
+
+    // Documentos de identidad del migrante
+    Route::get('/documentos',                              [DocumentoIdentidadController::class, 'index'])->name('documentos.index');
+    Route::post('/documentos',                             [DocumentoIdentidadController::class, 'store'])->name('documentos.store');
+    Route::delete('/documentos/{documento}',               [DocumentoIdentidadController::class, 'destroy'])->name('documentos.destroy');
+});
+
+// Descarga segura de documentos (staff + migrante propietario)
+Route::middleware(['auth', 'checkstatus'])->group(function () {
+    Route::get('/documentos/{documento}/descargar', [DocumentoIdentidadController::class, 'download'])
+         ->name('documentos.download');
 });
 
 require __DIR__.'/auth.php';

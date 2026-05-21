@@ -189,9 +189,16 @@ class UserController extends Controller
     {
         Gate::authorize('puede-eliminar');
 
-        $usuario = $user->load(['area', 'role', 'certificados']);
+        $usuario = $user->load(['area', 'role', 'certificados', 'migrantePerfil']);
 
-        return view('admin.users.show', compact('usuario'));
+        $documentosIdentidad = $user->role_id === 5
+            ? \App\Models\Documento::where('user_id', $user->id)
+                ->where('categoria', 'identidad')
+                ->latest()
+                ->get()
+            : collect();
+
+        return view('admin.users.show', compact('usuario', 'documentosIdentidad'));
     }
 
     public function index(): \Illuminate\View\View

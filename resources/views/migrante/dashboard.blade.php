@@ -23,32 +23,58 @@
         </div>
     </div>
 
-    {{-- Acción principal --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {{-- Acciones principales --}}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <a href="{{ route('migrante.solicitudes.create') }}"
-           class="bg-green-700 hover:bg-green-800 text-white rounded-2xl p-5 flex items-center gap-4 transition shadow-sm group">
-            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           style="background:var(--ink-900);color:var(--cream-50);border-radius:var(--r-lg);
+                  padding:20px;display:flex;align-items:center;gap:14px;text-decoration:none;
+                  transition:opacity .15s;"
+           onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
+            <div style="width:40px;height:40px;background:rgba(255,255,255,.12);border-radius:var(--r-md);
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
             </div>
             <div>
-                <p class="font-semibold text-sm">Nueva solicitud</p>
-                <p class="text-xs text-green-200 mt-0.5">Pedir ayuda a un área de Casa Monarca</p>
+                <p style="font-family:var(--font-display);font-weight:700;font-size:14px;">Nueva solicitud</p>
+                <p style="font-size:12px;color:var(--cream-300);margin-top:2px;">Pedir ayuda a Casa Monarca</p>
             </div>
         </a>
 
         <a href="{{ route('migrante.solicitudes.index') }}"
-           class="bg-white hover:bg-gray-50 border border-gray-200 rounded-2xl p-5 flex items-center gap-4 transition shadow-sm group">
-            <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           style="background:var(--paper);border:1px solid var(--cream-200);border-radius:var(--r-lg);
+                  padding:20px;display:flex;align-items:center;gap:14px;text-decoration:none;
+                  color:var(--ink-900);transition:background .15s;"
+           onmouseover="this.style.background='var(--cream-50)'" onmouseout="this.style.background='var(--paper)'">
+            <div style="width:40px;height:40px;background:var(--cream-100);border-radius:var(--r-md);
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg style="width:20px;height:20px;color:var(--ink-500);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
             </div>
             <div>
-                <p class="font-semibold text-sm text-gray-800">Mis solicitudes</p>
-                <p class="text-xs text-gray-400 mt-0.5">Ver el estado de sus peticiones</p>
+                <p style="font-family:var(--font-display);font-weight:700;font-size:14px;">Mis solicitudes</p>
+                <p style="font-size:12px;color:var(--ink-400);margin-top:2px;">Ver el estado de sus peticiones</p>
+            </div>
+        </a>
+
+        <a href="{{ route('migrante.documentos.index') }}"
+           style="background:var(--brand-orange-soft);border:1px solid var(--brand-orange-line);
+                  border-radius:var(--r-lg);padding:20px;display:flex;align-items:center;gap:14px;
+                  text-decoration:none;color:var(--ink-900);transition:background .15s;"
+           onmouseover="this.style.background='oklch(92% 0.055 60)'" onmouseout="this.style.background='var(--brand-orange-soft)'">
+            <div style="width:40px;height:40px;background:var(--paper);border:1px solid var(--brand-orange-line);
+                        border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg style="width:20px;height:20px;color:var(--brand-orange-deep);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+            <div>
+                <p style="font-family:var(--font-display);font-weight:700;font-size:14px;">Mis documentos</p>
+                <p style="font-size:12px;color:var(--ink-500);margin-top:2px;">Identidad y documentación personal</p>
             </div>
         </a>
     </div>

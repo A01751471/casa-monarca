@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\MigranteRegistrationController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\PemAuthController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,11 @@ Route::middleware('guest')->group(function () {
         ->name('login');
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    // PKI login for coordinators (role 2): challenge-response with RSA-2048
+    Route::get('login/challenge',  [PemAuthController::class, 'challenge'])->name('login.pem.challenge');
+    Route::post('login/pem',       [PemAuthController::class, 'verify'])->name('login.pem.verify')
+         ->middleware('throttle:10,1');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
