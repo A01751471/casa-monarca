@@ -70,7 +70,8 @@
                             </div>
                         </div>
 
-                        {{-- Rol + área (solo para grupos que tienen roles editables) --}}
+                        {{-- Rol + área (solo admin puede cambiarlos) --}}
+                        @can('puede-eliminar')
                         @if($roles->count() > 0)
                         <form action="{{ route('admin.users.update', $user->id) }}" method="POST"
                               class="flex flex-1 flex-wrap items-center gap-3">
@@ -106,11 +107,20 @@
                             <span>Rol: <strong class="text-gray-600">{{ $user->role?->name ?? '—' }}</strong></span>
                         </div>
                         @endif
+                        @else
+                        <div class="flex-1 flex flex-wrap items-center gap-3 text-xs text-gray-400">
+                            <span>Rol: <strong class="text-gray-600">{{ $user->role?->name ?? '—' }}</strong></span>
+                            @if($user->area)
+                            <span>· Área: <strong class="text-gray-600">{{ $user->area->nombre }}</strong></span>
+                            @endif
+                        </div>
+                        @endcan
 
                         {{-- Estatus + acciones --}}
                         <div class="flex items-center gap-2 shrink-0">
                             @if($user->status === 'alta')
                                 <span class="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Activo</span>
+                                @can('puede-eliminar')
                                 <form action="{{ route('users.revoke', $user->id) }}" method="POST">
                                     @csrf
                                     <button type="submit"
@@ -119,10 +129,12 @@
                                         Suspender
                                     </button>
                                 </form>
+                                @endcan
                             @elseif($user->status === 'pendiente')
                                 <span class="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">Pendiente</span>
                             @elseif($user->status === 'revocacion')
                                 <span class="px-2.5 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full">Suspendido</span>
+                                @can('puede-eliminar')
                                 <form action="{{ route('users.restore', $user->id) }}" method="POST">
                                     @csrf
                                     <button type="submit"
@@ -130,6 +142,7 @@
                                         Restaurar
                                     </button>
                                 </form>
+                                @endcan
                             @else
                                 <span class="px-2.5 py-1 bg-gray-100 text-gray-500 text-xs font-semibold rounded-full">Baja</span>
                             @endif

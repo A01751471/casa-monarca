@@ -153,12 +153,18 @@ class UserController extends Controller
     {
         Gate::authorize('puede-eliminar');
 
-        $nuevoRol = ($user->role_id == 3) ? 2 : 3;
+        // Solo alterna entre Coordinador (2) y Operativo (3) — nunca toca migrantes o admin
+        abort_if($user->role_id === 1, 422, 'No se puede cambiar el rol del administrador.');
+        abort_if($user->role_id === 5, 422, 'No se puede cambiar el rol de un migrante desde aquí.');
+        abort_if(!in_array($user->role_id, [2, 3]), 422, 'toggleRole solo aplica a Coordinador/Operativo.');
+
+        $rolAntes = $user->role_id;
+        $nuevoRol = ($rolAntes === 3) ? 2 : 3;
         $user->update(['role_id' => $nuevoRol]);
 
         ActividadLog::registrar('cambió_rol', $user, [
             'usuario'   => $user->name,
-            'rol_antes' => $user->getOriginal('role_id'),
+            'rol_antes' => $rolAntes,
             'rol_nuevo' => $nuevoRol,
         ]);
 
@@ -325,12 +331,18 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        Gate::authorize('puede-actualizar');
+        Gate::authorize('puede-eliminar');
+
+        // Migrantes tienen un flujo de gestión separado — no se editan desde aquí
+        abort_if($user->role_id === 5, 422, 'El perfil de migrantes se gestiona desde su sección dedicada.');
 
         $request->validate([
-            'role_id' => 'required|exists:roles,id',
+            'role_id' => 'required|exists:roles,id|not_in:1,5', // No se puede asignar admin ni migrante
             'area_id' => 'nullable|exists:areas,id',
         ]);
+
+        $rolAntes  = $user->role_id;
+        $areaAntes = $user->area_id;
 
         $user->update([
             'role_id' => $request->role_id,
@@ -339,7 +351,9 @@ class UserController extends Controller
 
         ActividadLog::registrar('actualizó_usuario', $user, [
             'usuario'    => $user->name,
+            'rol_antes'  => $rolAntes,
             'role_nuevo' => $request->role_id,
+            'area_antes' => $areaAntes,
             'area_nueva' => $request->area_id,
         ]);
 

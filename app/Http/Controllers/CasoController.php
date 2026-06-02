@@ -160,6 +160,7 @@ class CasoController extends Controller
     public function retirarPostulacion(Solicitud $solicitud): RedirectResponse
     {
         $user = auth()->user();
+        $this->verificarAccesoArea($solicitud->area_id);
 
         if ($solicitud->status !== 'pendiente') {
             return back()->with('error', 'No puedes retirar una postulación en este estado.');
@@ -189,9 +190,21 @@ class CasoController extends Controller
 
         $colaborador = User::findOrFail($request->colaborador_id);
 
+        // Solo roles 3-4 activos pueden ser colaboradores en un caso
+        abort_if(!in_array($colaborador->role_id, [3, 4]), 422, 'Solo usuarios operativos pueden ser asignados como colaboradores.');
+        abort_if($colaborador->status !== 'alta', 422, 'El colaborador seleccionado no tiene acceso activo al sistema.');
+
         // Admin can assign anyone; coordinator restricted to own area
         if (auth()->user()->role_id !== 1 && $colaborador->area_id !== $solicitud->area_id) {
             return back()->with('error', 'El colaborador seleccionado no pertenece a esta área.');
+        }
+
+        // Prevenir expedientes duplicados para el mismo perfil de migrante
+        $expedienteActivo = Expediente::where('migrante_perfil_id', $solicitud->migrante_perfil_id)
+            ->whereIn('status', ['sin_asignar', 'en_proceso'])
+            ->exists();
+        if ($expedienteActivo) {
+            return back()->with('error', 'Este migrante ya tiene un expediente activo en proceso. Resuélvelo antes de abrir uno nuevo.');
         }
 
         $expediente = Expediente::create([
@@ -353,6 +366,9 @@ class CasoController extends Controller
         $this->verificarCoordinador();
         $this->verificarAccesoArea($expediente->area_id);
 
+        // Verify the document actually belongs to this expediente
+        abort_if($documento->expediente_id !== $expediente->id, 403, 'El documento no pertenece a este expediente.');
+
         abort_if($documento->firmas()->exists(), 422,
             'Este documento ya está firmado digitalmente y no puede editarse. La firma garantiza su integridad.');
 
@@ -385,6 +401,8 @@ class CasoController extends Controller
     {
         $this->verificarCoordinador();
         $this->verificarAccesoArea($expediente->area_id);
+
+        abort_if($documento->expediente_id !== $expediente->id, 403, 'El documento no pertenece a este expediente.');
 
         $request->validate(['pem_llave' => ['required', 'string']]);
 

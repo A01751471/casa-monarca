@@ -46,6 +46,11 @@ class AreaMembresiaController extends Controller
             return back()->with('error', 'Ya tienes una solicitud pendiente. Espera a que sea revisada o cancélala primero.');
         }
 
+        // Advertir si ya pertenece a un área (es una transferencia)
+        if ($user->area_id && (int) $request->area_id === $user->area_id) {
+            return back()->with('error', 'Ya eres miembro de esa área.');
+        }
+
         $request->validate([
             'area_id' => ['required', 'exists:areas,id'],
             'nota'    => ['nullable', 'string', 'max:500'],
@@ -133,16 +138,28 @@ class AreaMembresiaController extends Controller
             return back()->with('error', 'Esta solicitud ya fue procesada.');
         }
 
-        // Asignar al área
-        $solicitud->user->update(['area_id' => $solicitud->area_id]);
+        $miembro      = $solicitud->user;
+        $areaAnterior = $miembro->area?->nombre;
+
+        $miembro->update(['area_id' => $solicitud->area_id]);
 
         $solicitud->update([
-            'status'      => 'aprobada',
+            'status'       => 'aprobada',
             'revisado_por' => $user->id,
-            'revisado_at' => now(),
+            'revisado_at'  => now(),
         ]);
 
-        return back()->with('status', "{$solicitud->user->name} ahora es miembro de {$solicitud->area->nombre}.");
+        // Cancelar otras solicitudes pendientes del mismo usuario (no debería haber, pero por seguridad)
+        AreaSolicitud::where('user_id', $miembro->id)
+            ->where('status', 'pendiente')
+            ->where('id', '!=', $solicitud->id)
+            ->update(['status' => 'rechazada', 'revisado_por' => $user->id, 'revisado_at' => now()]);
+
+        $msg = $areaAnterior
+            ? "{$miembro->name} transferido de {$areaAnterior} a {$solicitud->area->nombre}."
+            : "{$miembro->name} ahora es miembro de {$solicitud->area->nombre}.";
+
+        return back()->with('status', $msg);
     }
 
     // ─── Rechazar solicitud de membresía ─────────────────────────────────────
@@ -188,6 +205,11 @@ class AreaMembresiaController extends Controller
         ]);
 
         $objetivo = User::findOrFail($request->user_id);
+
+        // Solo se pueden asignar usuarios de rol 3 o 4 a áreas
+        if (!in_array($objetivo->role_id, [3, 4])) {
+            return back()->with('error', 'Solo se pueden asignar colaboradores y voluntarios a áreas.');
+        }
 
         // Coordinador solo puede asignar a su propia área
         if ($actor->role_id === 2 && (int) $request->area_id !== $actor->area_id) {
