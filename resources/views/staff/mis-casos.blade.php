@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-200 leading-tight">
-            Mis casos
+            {{ $esCoordinador ? 'Casos del área' : 'Mis casos' }}
         </h2>
     </x-slot>
 
@@ -15,18 +15,29 @@
                 {{ session('status') }}
             </div>
         @endif
+        @if(session('error'))
+            <div class="bg-red-50 border border-red-200 rounded-xl px-5 py-3 text-sm text-red-700">
+                {{ session('error') }}
+            </div>
+        @endif
 
         {{-- ── CASOS ACTIVOS ─────────────────────────────────────── --}}
         <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
-                    <h3 class="font-semibold text-gray-800 text-sm">Casos activos</h3>
+                    <h3 class="font-semibold text-gray-800 text-sm">
+                        {{ $esCoordinador ? 'Casos activos del área' : 'Casos activos' }}
+                    </h3>
                     <p class="text-xs text-gray-400 mt-0.5">{{ $activos->count() }} en proceso</p>
                 </div>
-                @if($activos->isNotEmpty())
-                    <span class="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">
-                        En atención
-                    </span>
+                @if($esCoordinador)
+                <a href="{{ route('casos.crear.form') }}"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Crear caso
+                </a>
                 @endif
             </div>
 
@@ -34,11 +45,20 @@
                 <div class="px-6 py-14 text-center">
                     <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
                         <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
                     </div>
+                    @if($esCoordinador)
+                    <p class="text-sm text-gray-500">No hay casos activos en el área.</p>
+                    <a href="{{ route('casos.crear.form') }}"
+                       class="inline-block mt-3 text-indigo-600 text-sm font-medium hover:underline">
+                        Crear el primer caso →
+                    </a>
+                    @else
                     <p class="text-sm text-gray-500">No tienes casos activos asignados.</p>
                     <p class="text-xs text-gray-400 mt-1">Ofrécete en la bandeja de tu área para recibir un caso.</p>
+                    @endif
                 </div>
             @else
                 <div class="divide-y divide-gray-100">
@@ -47,6 +67,7 @@
                         $sol    = $exp->solicitudes->first();
                         $p      = $sol?->migrantePerfil;
                         $nombre = $p ? trim($p->nombre . ' ' . $p->primer_apellido) : '—';
+                        $docsPend = $exp->docs_pendientes_firma ?? 0;
                     @endphp
                     <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-gray-50 transition">
                         <div class="flex-1 min-w-0">
@@ -54,18 +75,30 @@
                                 <span class="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
                                     {{ $exp->folio ?? 'Sin folio' }}
                                 </span>
-                                <span class="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">
-                                    En proceso
+                                @if($exp->status === 'sin_asignar')
+                                <span class="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-semibold">Sin asignar</span>
+                                @else
+                                <span class="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-semibold">En proceso</span>
+                                @endif
+                                @if($docsPend > 0)
+                                <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-semibold">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    {{ $docsPend }} doc{{ $docsPend > 1 ? 's' : '' }} por firmar
                                 </span>
-                                <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                                    {{ $exp->area?->nombre ?? '—' }}
-                                </span>
+                                @endif
                             </div>
                             <p class="text-sm font-medium text-gray-800">{{ $nombre }}</p>
                             @if($sol)
                             <p class="text-xs text-gray-500 mt-0.5 truncate">{{ $sol->descripcion }}</p>
                             @endif
-                            <p class="text-xs text-gray-400 mt-1">Abierto {{ $exp->created_at->diffForHumans() }}</p>
+                            <div class="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-400">
+                                <span>{{ $exp->area?->nombre ?? '—' }}</span>
+                                @if($esCoordinador && $exp->colaborador)
+                                <span>·</span>
+                                <span>Asignado a: <strong class="text-gray-600">{{ $exp->colaborador->name }}</strong></span>
+                                @endif
+                                <span>· Abierto {{ $exp->created_at->diffForHumans() }}</span>
+                            </div>
                         </div>
                         <a href="{{ route('casos.show', $exp->id) }}"
                            class="shrink-0 inline-flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full transition shadow-sm">
@@ -100,7 +133,12 @@
                     </span>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm text-gray-700 truncate">{{ $nombre }}</p>
-                        <p class="text-xs text-gray-400">{{ $exp->area?->nombre ?? '—' }}</p>
+                        <p class="text-xs text-gray-400">
+                            {{ $exp->area?->nombre ?? '—' }}
+                            @if($esCoordinador && $exp->colaborador)
+                            · {{ $exp->colaborador->name }}
+                            @endif
+                        </p>
                     </div>
                     <span class="text-xs text-gray-400 shrink-0">
                         {{ $exp->resuelto_at?->format('d/m/Y') ?? $exp->updated_at->format('d/m/Y') }}

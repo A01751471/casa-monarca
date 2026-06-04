@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AreaMembresiaController;
+use App\Http\Controllers\ArchivosMigrantesController;
 use App\Http\Controllers\CasoController;
 use App\Http\Controllers\CertificadoController;
 use App\Http\Controllers\DiagnosticoController;
@@ -57,6 +58,8 @@ Route::middleware(['auth', 'checkstatus'])->group(function () {
     Route::post('/solicitudes/{solicitud}/aprobar',                        [CasoController::class, 'aprobarCaso'])->name('casos.aprobar');
     Route::post('/solicitudes/{solicitud}/rechazar',                       [CasoController::class, 'rechazar'])->name('casos.rechazar');
     Route::get('/mis-casos',                                               [CasoController::class, 'misCasos'])->name('casos.mios');
+    Route::get('/coordinador/nuevo-caso',                                  [CasoController::class, 'crearCasoForm'])->name('casos.crear.form');
+    Route::post('/coordinador/nuevo-caso',                                 [CasoController::class, 'crearCaso'])->name('casos.crear');
     Route::get('/casos/{expediente}',                                      [CasoController::class, 'show'])->name('casos.show');
     Route::post('/casos/{expediente}/nota',                                [CasoController::class, 'agregarNota'])->name('casos.nota');
     Route::post('/casos/{expediente}/documento',                           [CasoController::class, 'subirDocumento'])->name('casos.documento');
@@ -121,6 +124,9 @@ Route::middleware(['auth', 'checkstatus'])->prefix('mi-espacio')->name('migrante
 
     // Solicitudes de rectificación / cancelación ARCO
     Route::post('/documentos/{documento}/rectificar',      [RectificacionController::class, 'solicitar'])->name('rectificar');
+
+    // Sello de integridad (paso de confirmación post-upload)
+    Route::post('/documentos/{documento}/sellar',          [DocumentoIdentidadController::class, 'sellar'])->name('documentos.sellar');
 });
 
 // Solicitudes ARCO — gestión staff
@@ -137,6 +143,13 @@ Route::middleware(['auth', 'checkstatus'])->group(function () {
 Route::middleware(['auth', 'checkstatus'])->group(function () {
     Route::get('/documentos/{documento}/descargar', [DocumentoIdentidadController::class, 'download'])
          ->name('documentos.download');
+});
+
+// Archivos de migrantes — vista staff
+Route::middleware(['auth', 'checkstatus'])->group(function () {
+    Route::get('/admin/archivos',                                [ArchivosMigrantesController::class, 'index'])->name('admin.archivos.index');
+    Route::get('/admin/archivos/{migrante}',                     [ArchivosMigrantesController::class, 'show'])->name('admin.archivos.show');
+    Route::get('/admin/archivos/doc/{documento}/verificar',      [ArchivosMigrantesController::class, 'verificar'])->name('admin.archivos.verificar');
 });
 
 require __DIR__.'/auth.php';

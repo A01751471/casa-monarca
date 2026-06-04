@@ -146,8 +146,12 @@
                 @if($expediente->documentos->isNotEmpty())
                 <div class="divide-y divide-gray-100">
                     @foreach($expediente->documentos as $doc)
-                    @php $yoFirmé = $tieneCertActivo && $doc->firmas->contains('firmado_por', auth()->id()); @endphp
-                    <div class="px-5 py-3" x-data="{ openEditar: false, openEliminar: false, openFirmar: false }">
+                    @php
+                        $yoFirmé        = $tieneCertActivo && $doc->firmas->contains('firmado_por', auth()->id());
+                        $pendienteAprov = !$doc->visible_migrante && $esCoordinador;
+                    @endphp
+                    <div class="px-5 py-3 {{ $pendienteAprov ? 'bg-amber-50' : '' }}"
+                         x-data="{ openEditar: false, openEliminar: false, openFirmar: false }">
 
                         {{-- Per-document firma feedback --}}
                         @if(session('firma_ok_' . $doc->id))
@@ -173,6 +177,17 @@
                                 <p class="text-xs text-gray-400">
                                     {{ strtoupper($doc->tipo) }} · {{ $doc->autor?->name ?? '—' }} · {{ $doc->created_at->format('d/m/Y') }}
                                 </p>
+                                @if($pendienteAprov)
+                                <span class="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                    Pendiente de tu firma · el migrante aún no puede verlo
+                                </span>
+                                @elseif($doc->visible_migrante)
+                                <span class="inline-flex items-center gap-1 mt-1 text-xs text-green-600">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                    Visible al migrante
+                                </span>
+                                @endif
                                 {{-- Firma badges --}}
                                 @if($doc->firmas->isNotEmpty())
                                 <div class="flex flex-wrap gap-1 mt-1">
@@ -231,9 +246,13 @@
                                 @method('PATCH')
                                 <input type="text" name="nombre" value="{{ $doc->nombre }}" required maxlength="255"
                                        class="w-full text-xs border border-indigo-200 rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-indigo-400 focus:outline-none">
-                                <textarea name="pem_llave" rows="4" required
-                                          placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;...&#10;-----END RSA PRIVATE KEY-----"
-                                          class="w-full text-xs font-mono border border-indigo-200 rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-indigo-400 focus:outline-none resize-none"></textarea>
+                                <div>
+                                    <input type="file" accept=".pem" required
+                                           onchange="loadPemKey(this, 'pem-edit-{{ $doc->id }}')"
+                                           class="w-full text-xs border border-indigo-200 rounded-lg px-3 py-1.5 file:mr-2 file:py-0.5 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-100 file:text-indigo-800">
+                                    <input type="hidden" name="pem_llave" id="pem-edit-{{ $doc->id }}">
+                                    <p class="text-xs text-indigo-500 mt-1">Selecciona tu archivo .pem</p>
+                                </div>
                                 <div class="flex gap-2">
                                     <button type="submit" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full transition">
                                         Guardar cambio
@@ -256,9 +275,13 @@
                             <form action="{{ route('casos.documento.eliminar', [$expediente->id, $doc->id]) }}" method="POST" class="space-y-2">
                                 @csrf
                                 @method('DELETE')
-                                <textarea name="pem_llave" rows="4" required
-                                          placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;...&#10;-----END RSA PRIVATE KEY-----"
-                                          class="w-full text-xs font-mono border border-red-200 rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-red-400 focus:outline-none resize-none"></textarea>
+                                <div>
+                                    <input type="file" accept=".pem" required
+                                           onchange="loadPemKey(this, 'pem-del-{{ $doc->id }}')"
+                                           class="w-full text-xs border border-red-200 rounded-lg px-3 py-1.5 file:mr-2 file:py-0.5 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-red-100 file:text-red-800">
+                                    <input type="hidden" name="pem_llave" id="pem-del-{{ $doc->id }}">
+                                    <p class="text-xs text-red-400 mt-1">Selecciona tu archivo .pem</p>
+                                </div>
                                 <div class="flex gap-2">
                                     <button type="submit" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-full transition">
                                         Eliminar permanentemente
@@ -343,6 +366,18 @@
     </div>
 
     <script>
+    // Lee el archivo .pem y pone su contenido en el hidden input correspondiente
+    function loadPemKey(input, targetId) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const hidden = document.getElementById(targetId);
+            if (hidden) hidden.value = e.target.result;
+        };
+        reader.readAsText(file);
+    }
+
     async function firmarConPem(docId, file) {
         if (!file) return;
         const statusEl = document.getElementById('firma-status-' + docId);

@@ -24,8 +24,9 @@
     </div>
 
     {{-- Acciones principales --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <a href="{{ route('migrante.solicitudes.create') }}"
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <a href="{{ route('migrante.solicitudes.index') }}"
            style="background:var(--ink-900);color:var(--cream-50);border-radius:var(--r-lg);
                   padding:20px;display:flex;align-items:center;gap:14px;text-decoration:none;
                   transition:opacity .15s;"
@@ -33,30 +34,13 @@
             <div style="width:40px;height:40px;background:rgba(255,255,255,.12);border-radius:var(--r-md);
                         display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <svg style="width:20px;height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-            </div>
-            <div>
-                <p style="font-family:var(--font-display);font-weight:700;font-size:14px;">Nueva solicitud</p>
-                <p style="font-size:12px;color:var(--cream-300);margin-top:2px;">Pedir ayuda a Casa Monarca</p>
-            </div>
-        </a>
-
-        <a href="{{ route('migrante.solicitudes.index') }}"
-           style="background:var(--paper);border:1px solid var(--cream-200);border-radius:var(--r-lg);
-                  padding:20px;display:flex;align-items:center;gap:14px;text-decoration:none;
-                  color:var(--ink-900);transition:background .15s;"
-           onmouseover="this.style.background='var(--cream-50)'" onmouseout="this.style.background='var(--paper)'">
-            <div style="width:40px;height:40px;background:var(--cream-100);border-radius:var(--r-md);
-                        display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg style="width:20px;height:20px;color:var(--ink-500);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
             </div>
             <div>
                 <p style="font-family:var(--font-display);font-weight:700;font-size:14px;">Mis solicitudes</p>
-                <p style="font-size:12px;color:var(--ink-400);margin-top:2px;">Ver el estado de sus peticiones</p>
+                <p style="font-size:12px;color:var(--cream-300);margin-top:2px;">Ver y crear peticiones a Casa Monarca</p>
             </div>
         </a>
 
@@ -124,9 +108,9 @@
     @else
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-10 text-center">
         <p class="text-sm text-gray-500">Aún no ha levantado ninguna solicitud.</p>
-        <a href="{{ route('migrante.solicitudes.create') }}"
+        <a href="{{ route('migrante.solicitudes.index') }}"
            class="inline-block mt-3 text-green-700 text-sm font-medium hover:underline">
-            Crear su primera solicitud →
+            Ir a solicitudes →
         </a>
     </div>
     @endif

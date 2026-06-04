@@ -110,9 +110,19 @@ class MigranteSolicitudController extends Controller
             abort(403, 'No tienes acceso a este expediente.');
         }
 
-        $expediente->load(['documentos.autor', 'area']);
+        $expediente->load(['area']);
 
-        return view('migrante.caso.documentos', compact('expediente'));
+        // Solo docs aprobados por coordinador son visibles al migrante
+        $documentosVisibles = $expediente->documentos()
+            ->with('autor')
+            ->where('visible_migrante', true)
+            ->latest()
+            ->get();
+
+        $totalDocs    = $expediente->documentos()->count();
+        $enRevision   = $totalDocs - $documentosVisibles->count();
+
+        return view('migrante.caso.documentos', compact('expediente', 'documentosVisibles', 'enRevision'));
     }
 
     // El migrante puede marcar su caso como resuelto desde su portal

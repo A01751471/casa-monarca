@@ -63,7 +63,14 @@
                 ? \App\Models\AreaSolicitud::where('area_id', $u->area_id)->where('status','pendiente')->count()
                 : \App\Models\AreaSolicitud::where('status','pendiente')->count();
             $casosMios = ($u->area_id) ? \App\Models\Expediente::where('colaborador_id', $u->id)->whereIn('status',['sin_asignar','en_proceso'])->count() : 0;
-            $rectPendientes = ($rid <= 4) ? \App\Models\SolicitudRectificacion::whereNotIn('status',['aprobada','rechazada'])->count() : 0;
+            $rectPendientes  = ($rid <= 4) ? \App\Models\SolicitudRectificacion::whereNotIn('status',['aprobada','rechazada'])->count() : 0;
+            // Docs de expediente esperando firma del coordinador (solo visible para coordinadores)
+            $docsPendFirma = ($rid === 2 && $u->area_id)
+                ? \App\Models\Documento::where('categoria','expediente')
+                    ->where('visible_migrante', false)
+                    ->whereHas('expediente', fn($q) => $q->where('area_id', $u->area_id))
+                    ->count()
+                : 0;
         @endphp
 
         {{-- PANEL --}}
@@ -107,16 +114,26 @@
         @endif
 
         {{-- ÁREAS --}}
-        @can('puede-actualizar')
-        @include('layouts.partials.sidebar-group', [
-            'label' => 'Áreas',
-            'items' => [
-                ['label' => 'Gestión de áreas', 'route' => 'areas.index',
-                 'active' => request()->routeIs('areas.*') || request()->routeIs('admin.areas.*'),
-                 'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16M3 21h18M9 7h1m-1 4h1m4-4h1m-1 4h1"/>'],
-            ]
-        ])
-        @endcan
+        @if($rid <= 2)
+        @php
+            $areaIcon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16M3 21h18M9 7h1m-1 4h1m4-4h1m-1 4h1"/>';
+            // Admin ve todas las áreas; coordinador va directo a la suya
+            $areasItems = ($rid === 1)
+                ? [['label' => 'Gestión de áreas', 'route' => 'areas.index',
+                    'active' => request()->routeIs('areas.*') || request()->routeIs('admin.areas.*'),
+                    'icon'   => $areaIcon]]
+                : ($u->area_id
+                    ? [['label' => 'Mi área', 'route' => 'admin.areas.show',
+                        'url'    => route('admin.areas.show', $u->area_id),
+                        'active' => request()->routeIs('admin.areas.show')
+                                    && request()->route('area')?->id == $u->area_id,
+                        'icon'   => $areaIcon]]
+                    : []);
+        @endphp
+        @if(count($areasItems))
+        @include('layouts.partials.sidebar-group', ['label' => 'Áreas', 'items' => $areasItems])
+        @endif
+        @endif
 
         {{-- CASOS (staff con área) --}}
         @if($rid >= 2 && $rid <= 4 || ($voluntarioRoleId && $rid == $voluntarioRoleId))
@@ -124,16 +141,21 @@
             $casosItems = [];
             if ($u->area_id) {
                 $casosItems[] = [
-                    'label' => 'Mis casos', 'route' => 'casos.mios',
-                    'active' => request()->routeIs('casos.mios'),
-                    'badge' => $casosMios,
-                    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>',
+                    'label'      => 'Mis casos',
+                    'route'      => 'casos.mios',
+                    'active'     => request()->routeIs('casos.mios'),
+                    'badge'      => $casosMios,
+                    'badge_warn' => $rid === 2 && $docsPendFirma > 0,
+                    'icon'       => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>',
                 ];
-                $casosItems[] = [
-                    'label' => 'Mi área', 'route' => 'mi-area.index',
-                    'active' => request()->routeIs('mi-area.*'),
-                    'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2h5M12 11a4 4 0 100-8 4 4 0 000 8z"/>',
-                ];
+                // Roles 3-4 ven "Mi área" aquí (coordinadores ya la tienen en ÁREAS)
+                if ($rid !== 2) {
+                    $casosItems[] = [
+                        'label' => 'Mi área', 'route' => 'mi-area.index',
+                        'active' => request()->routeIs('mi-area.*'),
+                        'icon' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2h5M12 11a4 4 0 100-8 4 4 0 000 8z"/>',
+                    ];
+                }
             } else {
                 $casosItems[] = [
                     'label' => 'Solicitar área', 'route' => 'mi-area.index',
@@ -155,6 +177,18 @@
                  'active' => request()->routeIs('rectificaciones.*'),
                  'badge'  => $rectPendientes,
                  'icon'   => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>'],
+            ]
+        ])
+        @endif
+
+        {{-- ARCHIVOS (admin + coordinadores) --}}
+        @if($rid <= 2)
+        @include('layouts.partials.sidebar-group', [
+            'label' => 'Archivos',
+            'items' => [
+                ['label' => 'Archivos de migrantes', 'route' => 'admin.archivos.index',
+                 'active' => request()->routeIs('admin.archivos.*'),
+                 'icon'   => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>'],
             ]
         ])
         @endif

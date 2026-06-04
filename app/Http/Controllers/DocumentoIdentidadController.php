@@ -14,7 +14,7 @@ use Illuminate\View\View;
 
 class DocumentoIdentidadController extends Controller
 {
-    // ── Migrant: view and upload their own identity docs ─────────
+    // ── Migrant: view their identity docs ────────────────────────
 
     public function index(): View
     {
@@ -26,7 +26,6 @@ class DocumentoIdentidadController extends Controller
                                ->latest()
                                ->get();
 
-        // Load active solicitudes keyed by documento_id for status display
         $solicitudesActivas = SolicitudRectificacion::where('solicitante_id', $user->id)
             ->whereNotIn('status', ['aprobada', 'rechazada'])
             ->get()
@@ -36,6 +35,8 @@ class DocumentoIdentidadController extends Controller
 
         return view('migrante.documentos.index', compact('documentos', 'etiquetas', 'solicitudesActivas'));
     }
+
+    // ── Migrant: upload a new identity doc ───────────────────────
 
     public function store(Request $request): RedirectResponse
     {
@@ -57,7 +58,7 @@ class DocumentoIdentidadController extends Controller
         $ruta = $file->store("identidad/{$user->id}", 'local');
         $hash = hash_file('sha256', $file->getRealPath());
 
-        Documento::create([
+        $documento = Documento::create([
             'user_id'      => $user->id,
             'subido_por'   => $user->id,
             'categoria'    => 'identidad',
@@ -73,12 +74,38 @@ class DocumentoIdentidadController extends Controller
             'nombre'   => $nombre,
         ]);
 
-        return back()->with('status', "Documento «{$etiqueta}» subido correctamente.");
+        // Señal para que la vista muestre el paso de confirmación/sellado
+        return back()->with('doc_pendiente_sello', $documento->id)
+                     ->with('doc_pendiente_nombre', $documento->nombre);
     }
+
+    // ── Migrant: apply integrity seal after confirmation ─────────
+
+    public function sellar(Documento $documento): RedirectResponse
+    {
+        $user = auth()->user();
+        abort_if($user->role_id !== 5, 403);
+        abort_if($documento->user_id !== $user->id || $documento->categoria !== 'identidad', 403);
+        abort_if($documento->sello_integridad !== null, 422, 'Este documento ya está sellado.');
+
+        $documento->update([
+            'sello_integridad' => hash_hmac('sha256', $documento->hash_sha256, config('app.key')),
+            'sellado_at'       => now(),
+        ]);
+
+        ActividadLog::registrar('selló_documento', $user, [
+            'nombre'   => $documento->nombre,
+            'etiqueta' => $documento->etiqueta,
+            'hash'     => substr($documento->hash_sha256, 0, 16) . '…',
+        ]);
+
+        return back()->with('status', "Sello de integridad aplicado a «{$documento->nombre}».");
+    }
+
+    // ── Admin: delete identity doc directly ──────────────────────
 
     public function destroy(Documento $documento): RedirectResponse
     {
-        // Solo admin puede eliminar directamente; migrantes deben usar el flujo ARCO
         Gate::authorize('puede-eliminar');
         abort_if($documento->categoria !== 'identidad', 403);
 
@@ -96,19 +123,32 @@ class DocumentoIdentidadController extends Controller
         $esStaff   = in_array($user->role_id, [1, 2, 3, 4]);
         $esPropiet = $documento->user_id === $user->id;
 
-        // For case docs, staff with access to that expediente may download
         if ($documento->categoria === 'expediente') {
-            abort_if(! $esStaff, 403);
+            if (!$esStaff) {
+                // Migrante solo puede descargar docs de su propio expediente que ya fueron aprobados
+                $perfil   = $user->migrantePerfil;
+                $esMiCaso = $perfil && $documento->expediente?->migrante_perfil_id === $perfil->id;
+                abort_if(!$esMiCaso || !$documento->visible_migrante, 403);
+            }
         } else {
-            abort_if(! $esStaff && ! $esPropiet, 403);
+            abort_if(!$esStaff && !$esPropiet, 403);
         }
 
         abort_unless(Storage::disk('local')->exists($documento->ruta_storage), 404);
+
+        // Log de descarga para documentos de identidad (solo cuando el staff descarga)
+        if ($esStaff && $documento->categoria === 'identidad') {
+            ActividadLog::registrar('descargó_documento_identidad', $user, [
+                'documento'  => $documento->nombre,
+                'etiqueta'   => $documento->etiqueta,
+                'propietario'=> $documento->propietario?->name,
+                'hash'       => substr($documento->hash_sha256, 0, 16) . '…',
+            ]);
+        }
 
         return Storage::disk('local')->download(
             $documento->ruta_storage,
             $documento->nombre . '.' . $documento->tipo
         );
     }
-
 }

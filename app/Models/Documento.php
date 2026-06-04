@@ -18,6 +18,13 @@ class Documento extends Model
         'tipo',
         'ruta_storage',
         'hash_sha256',
+        'sello_integridad',
+        'sellado_at',
+        'visible_migrante',
+    ];
+
+    protected $casts = [
+        'sellado_at' => 'datetime',
     ];
 
     // ── Relationships ────────────────────────────────────────────
@@ -64,6 +71,16 @@ class Documento extends Model
     public function estaFirmado(): bool
     {
         return $this->firmas()->exists();
+    }
+
+    // Verifica que el sello HMAC del sistema sea válido (no toca el disco)
+    public function selladoEsValido(): bool
+    {
+        if (!$this->sello_integridad || !$this->hash_sha256) return false;
+        return hash_equals(
+            $this->sello_integridad,
+            hash_hmac('sha256', $this->hash_sha256, config('app.key'))
+        );
     }
 
     public static function etiquetasIdentidad(): array

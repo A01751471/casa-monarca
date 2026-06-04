@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Documento;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -75,5 +76,10 @@ class User extends Authenticatable
     public function areaSolicitudPendiente()
     {
         return $this->hasOne(AreaSolicitud::class)->where('status', 'pendiente')->latestOfMany();
+    }
+
+    public function documentos()
+    {
+        return $this->hasMany(Documento::class, 'user_id');
     }
 }

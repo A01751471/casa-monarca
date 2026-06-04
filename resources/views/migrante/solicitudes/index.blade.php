@@ -55,8 +55,8 @@
             <div class="px-6 py-4">
                 <div class="flex items-start gap-4">
                     <div class="flex-1 min-w-0">
-                        {{-- Folio si ya tiene caso abierto --}}
-                        @if($folio)
+                        {{-- Folio con link a documentos --}}
+                        @if($folio && $sol->expediente_id)
                             <div class="flex items-center gap-2 mb-1.5">
                                 <span class="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
                                     {{ $folio }}
@@ -78,9 +78,23 @@
                             </span>
                         </div>
 
-                        {{-- Botón marcar como resuelta (solo cuando está en proceso) --}}
-                        @if($sol->status === 'en_proceso')
-                            <form action="{{ route('migrante.solicitudes.resolver', $sol->id) }}" method="POST" class="mt-3">
+                        {{-- Acciones --}}
+                        <div class="flex flex-wrap items-center gap-2 mt-3">
+                            {{-- Ver documentos del caso --}}
+                            @if($sol->expediente_id)
+                            <a href="{{ route('migrante.caso.documentos', $sol->expediente_id) }}"
+                               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                Ver documentos del caso
+                            </a>
+                            @endif
+
+                            {{-- Marcar como resuelta --}}
+                            @if($sol->status === 'en_proceso')
+                            <form action="{{ route('migrante.solicitudes.resolver', $sol->id) }}" method="POST">
                                 @csrf
                                 <button type="submit"
                                         onclick="return confirm('¿Confirma que su solicitud fue resuelta satisfactoriamente?')"
@@ -91,7 +105,8 @@
                                     Marcar como resuelta
                                 </button>
                             </form>
-                        @endif
+                            @endif
+                        </div>
                     </div>
 
                     <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $badge[0] }} shrink-0 mt-1">

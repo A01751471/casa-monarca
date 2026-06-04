@@ -101,12 +101,18 @@ class FirmaController extends Controller
             'firmado_at'    => now(),
         ]);
 
+        // La firma del coordinador sirve como aprobación: el migrante ya puede verlo y descargarlo
+        if (!$documento->visible_migrante) {
+            $documento->update(['visible_migrante' => true]);
+        }
+
         ActividadLog::registrar('firmó_documento', $documento, [
             'nombre'      => $documento->nombre,
             'fingerprint' => substr($cert->fingerprint, 0, 16) . '…',
             'expediente'  => $documento->expediente?->folio,
+            'aprobó_para_migrante' => true,
         ]);
 
-        return back()->with('firma_ok_' . $documento->id, 'Documento firmado correctamente.');
+        return back()->with('firma_ok_' . $documento->id, 'Documento firmado y aprobado. El migrante ya puede verlo.');
     }
 }

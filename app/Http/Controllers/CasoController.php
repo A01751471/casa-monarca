@@ -289,20 +289,43 @@ class CasoController extends Controller
             abort(403, 'Esta vista es para colaboradores.');
         }
 
-        $activos = Expediente::where('colaborador_id', $user->id)
-            ->whereIn('status', ['sin_asignar', 'en_proceso'])
-            ->with(['solicitudes.migrantePerfil', 'area'])
-            ->latest()
-            ->get();
+        $esCoordinador = $user->role_id === 2;
 
-        $terminados = Expediente::where('colaborador_id', $user->id)
-            ->where('status', 'terminado')
-            ->with(['solicitudes.migrantePerfil', 'area'])
-            ->latest()
-            ->take(20)
-            ->get();
+        if ($esCoordinador && $user->area_id) {
+            // Coordinador ve TODOS los casos de su área con el colaborador asignado y docs pendientes
+            $activos = Expediente::where('area_id', $user->area_id)
+                ->whereIn('status', ['sin_asignar', 'en_proceso'])
+                ->with(['solicitudes.migrantePerfil', 'area', 'colaborador'])
+                ->withCount([
+                    'documentos as docs_pendientes_firma' => fn($q) => $q
+                        ->where('categoria', 'expediente')
+                        ->where('visible_migrante', false),
+                ])
+                ->latest()
+                ->get();
 
-        return view('staff.mis-casos', compact('activos', 'terminados'));
+            $terminados = Expediente::where('area_id', $user->area_id)
+                ->where('status', 'terminado')
+                ->with(['solicitudes.migrantePerfil', 'area', 'colaborador'])
+                ->latest()
+                ->take(20)
+                ->get();
+        } else {
+            $activos = Expediente::where('colaborador_id', $user->id)
+                ->whereIn('status', ['sin_asignar', 'en_proceso'])
+                ->with(['solicitudes.migrantePerfil', 'area'])
+                ->latest()
+                ->get();
+
+            $terminados = Expediente::where('colaborador_id', $user->id)
+                ->where('status', 'terminado')
+                ->with(['solicitudes.migrantePerfil', 'area'])
+                ->latest()
+                ->take(20)
+                ->get();
+        }
+
+        return view('staff.mis-casos', compact('activos', 'terminados', 'esCoordinador'));
     }
 
     // ─── Notas ───────────────────────────────────────────────────────────────
@@ -342,14 +365,19 @@ class CasoController extends Controller
         $ruta = $file->store("expedientes/{$expediente->id}", 'local');
         $hash = hash_file('sha256', $file->getRealPath());
 
+        // Docs subidos por operativos/voluntarios (rol 3-4) requieren firma del coordinador
+        // antes de ser visibles al migrante. Coordinadores y admin aprueban automáticamente.
+        $visibleMigrante = auth()->user()->role_id <= 2;
+
         Documento::create([
-            'expediente_id' => $expediente->id,
-            'subido_por'    => auth()->id(),
-            'categoria'     => 'expediente',
-            'nombre'        => $request->nombre,
-            'tipo'          => $file->getClientOriginalExtension(),
-            'ruta_storage'  => $ruta,
-            'hash_sha256'   => $hash,
+            'expediente_id'   => $expediente->id,
+            'subido_por'      => auth()->id(),
+            'categoria'       => 'expediente',
+            'nombre'          => $request->nombre,
+            'tipo'            => $file->getClientOriginalExtension(),
+            'ruta_storage'    => $ruta,
+            'hash_sha256'     => $hash,
+            'visible_migrante'=> $visibleMigrante,
         ]);
 
         ActividadLog::registrar('subió_documento', $expediente, [
@@ -453,5 +481,94 @@ class CasoController extends Controller
 
         return redirect()->route('casos.bandeja', $expediente->area_id)
             ->with('status', "Caso {$expediente->folio} marcado como resuelto.");
+    }
+
+    // ─── Coordinador crea caso directamente para un migrante ────────────────
+
+    public function crearCasoForm(): View
+    {
+        $this->verificarCoordinador();
+
+        $user = auth()->user();
+        abort_if(!$user->area_id, 422, 'Debes pertenecer a un área para crear casos.');
+
+        $migrantes = User::where('role_id', 5)
+            ->where('status', 'alta')
+            ->has('migrantePerfil')
+            ->with('migrantePerfil')
+            ->orderBy('name')
+            ->get();
+
+        $colaboradores = User::where('area_id', $user->area_id)
+            ->whereIn('role_id', [3, 4])
+            ->where('status', 'alta')
+            ->orderBy('name')
+            ->get();
+
+        $tipos = ['documento', 'proceso', 'apoyo', 'informacion', 'otro'];
+
+        return view('staff.crear-caso', compact('migrantes', 'colaboradores', 'tipos'));
+    }
+
+    public function crearCaso(Request $request): RedirectResponse
+    {
+        $this->verificarCoordinador();
+
+        $user = auth()->user();
+        abort_if(!$user->area_id, 422, 'Debes pertenecer a un área.');
+
+        $request->validate([
+            'migrante_id'    => ['required', 'exists:users,id'],
+            'colaborador_id' => ['required', 'exists:users,id'],
+            'tipo'           => ['required', 'in:documento,proceso,apoyo,informacion,otro'],
+            'descripcion'    => ['required', 'string', 'max:1000'],
+        ]);
+
+        $migrante = User::findOrFail($request->migrante_id);
+        abort_if($migrante->role_id !== 5, 422, 'Solo se puede crear casos para migrantes.');
+
+        $perfil = $migrante->migrantePerfil;
+        abort_if(!$perfil, 422, 'El migrante seleccionado no tiene perfil completo.');
+
+        $colaborador = User::findOrFail($request->colaborador_id);
+        abort_if(!in_array($colaborador->role_id, [3, 4]) || $colaborador->area_id !== $user->area_id, 422, 'Colaborador inválido.');
+
+        // Prevenir expedientes duplicados para el mismo migrante
+        $expedienteActivo = Expediente::where('migrante_perfil_id', $perfil->id)
+            ->whereIn('status', ['sin_asignar', 'en_proceso'])
+            ->exists();
+        if ($expedienteActivo) {
+            return back()->with('error', 'Este migrante ya tiene un expediente activo. Resuélvelo antes de crear uno nuevo.');
+        }
+
+        $expediente = Expediente::create([
+            'folio'              => Expediente::generarFolio(),
+            'migrante_perfil_id' => $perfil->id,
+            'colaborador_id'     => $colaborador->id,
+            'area_id'            => $user->area_id,
+            'status'             => 'en_proceso',
+        ]);
+
+        // La solicitud aparece en el portal del migrante como propia
+        Solicitud::create([
+            'migrante_perfil_id' => $perfil->id,
+            'user_id'            => $migrante->id,
+            'area_id'            => $user->area_id,
+            'tipo'               => $request->tipo,
+            'descripcion'        => $request->descripcion,
+            'status'             => 'en_proceso',
+            'expediente_id'      => $expediente->id,
+            'atendida_por'       => $user->id,
+        ]);
+
+        ActividadLog::registrar('creó_caso_coordinador', $expediente, [
+            'folio'       => $expediente->folio,
+            'migrante'    => $migrante->name,
+            'colaborador' => $colaborador->name,
+            'coordinador' => $user->name,
+        ]);
+
+        return redirect()->route('casos.show', $expediente->id)
+            ->with('status', "Caso {$expediente->folio} creado y asignado a {$colaborador->name}.");
     }
 }

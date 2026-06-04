@@ -13,7 +13,7 @@
         $badge      = $item['badge'] ?? 0;
         $badgeWarn  = $item['badge_warn'] ?? false;
     @endphp
-    <a href="{{ route($item['route']) }}"
+    <a href="{{ $item['url'] ?? route($item['route']) }}"
        style="display:flex;align-items:center;gap:9px;padding:8px 10px;
               border-radius:var(--r-sm);font-size:13px;font-weight:500;
               text-decoration:none;margin-bottom:1px;transition:background .12s;
